@@ -1,0 +1,2 @@
+# core
+Mediacoin golang-core
