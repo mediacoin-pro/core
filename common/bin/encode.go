@@ -20,6 +20,16 @@ func Decode(data []byte, vv ...interface{}) error {
 	return NewBuffer(data).ReadVar(vv...)
 }
 
+func Read(r io.Reader, v ...interface{}) error {
+	return NewReader(r).ReadVar(v...)
+}
+
+func Write(w io.Writer, v ...interface{}) error {
+	buf := NewBuffer(nil, v...)
+	_, err := io.Copy(w, buf.Buffer())
+	return err
+}
+
 type binaryEncoder interface {
 	BinaryEncode(w io.Writer) error
 }

@@ -8,13 +8,17 @@ type Buffer struct {
 	Writer
 }
 
-func NewBuffer(p []byte) *Buffer {
+func NewBuffer(p []byte, v ...interface{}) *Buffer {
 	buf := bytes.NewBuffer(p)
-	return &Buffer{
+	rw := &Buffer{
 		buf,
 		Reader{rd: buf},
 		Writer{wr: buf},
 	}
+	if len(v) > 0 {
+		rw.WriteVar(v...)
+	}
+	return rw
 }
 
 func (b *Buffer) Error() error {
@@ -30,4 +34,16 @@ func (w *Buffer) Bytes() []byte {
 
 func (w *Buffer) Buffer() *bytes.Buffer {
 	return w.buf
+}
+
+func (w *Buffer) Read(p []byte) (int, error) {
+	return w.buf.Read(p)
+}
+
+func (w *Buffer) Write(p []byte) (int, error) {
+	return w.buf.Write(p)
+}
+
+func (w *Buffer) Close() error {
+	return nil
 }
