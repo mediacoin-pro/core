@@ -38,3 +38,11 @@ func RecoverAndReport() {
 		panic(r)
 	}
 }
+
+func TracePanic() {
+	if r := recover(); r != nil {
+		xlog.Fatal.Print("Panic:\n", string(debug.Stack()))
+		xlog.Fatal.Printf("PANIC-ERROR: %v", r)
+		panic(r)
+	}
+}
