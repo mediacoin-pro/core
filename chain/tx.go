@@ -38,16 +38,12 @@ type Transaction struct {
 	StateUpdates state.Values // state changes (is not filled by sender)
 
 	// not imported fields
-	blockNum uint64            //
-	blockIdx int               //
-	blockTs  int64             //
+	blockNum uint64            // block-num
+	blockIdx int               // tx-index in block
+	blockTs  int64             // block-timestamp in µsec
 	_obj     ITransaction      //
 	bc       BCContext         //
 	_users   map[uint64]string // cache of user nicks for current transaction
-}
-
-func GenerateNonce() uint64 {
-	return uint64(timestamp())
 }
 
 func NewTx(
@@ -57,7 +53,7 @@ func NewTx(
 	obj ITransaction,
 ) *Transaction {
 	if nonce == 0 {
-		nonce = GenerateNonce()
+		nonce = NewNonce()
 	}
 	cfg := DefaultConfig
 	if bc != nil {
@@ -128,6 +124,9 @@ func (tx *Transaction) SenderNick() (nick string, err error) {
 
 // Hash returns hash of senders data
 func (tx *Transaction) Hash() []byte {
+	if tx == nil {
+		return nil
+	}
 	return bin.Hash256(
 		tx.Type,
 		tx.Version,
@@ -200,6 +199,7 @@ func (tx *Transaction) BlockIdx() int {
 	return tx.blockIdx
 }
 
+// BlockTs returns timestamp in µsec
 func (tx *Transaction) BlockTs() int64 {
 	return tx.blockTs
 }

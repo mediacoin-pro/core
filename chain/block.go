@@ -22,7 +22,7 @@ func GenerateNewBlock(
 	txs []*Transaction,
 	prv *crypto.PrivateKey,
 ) (block *Block, err error) {
-	return GenerateNewBlockEx(bc, txs, prv, timestamp(), 0)
+	return GenerateNewBlockEx(bc, txs, prv, Timestamp(), 0)
 }
 
 func GenerateNewBlockEx(
@@ -36,10 +36,12 @@ func GenerateNewBlockEx(
 	st := bc.State()
 	validTxs := txs[:0]
 	for _, tx := range txs {
-		if tx, err := bc.TransactionByID(tx.ID()); err != nil {
-			return nil, err
-		} else if tx != nil {
+		if tx == nil {
 			continue // skip
+		} else if _tx, err := bc.TransactionByID(tx.ID()); err != nil {
+			return nil, err
+		} else if _tx != nil {
+			continue // skip. tx has registered
 		}
 		if upd, err := tx.Execute(st); err == nil {
 			tx.StateUpdates = upd

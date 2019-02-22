@@ -27,11 +27,15 @@ var (
 )
 
 // returns current timestamp in µsec
-func timestamp() int64 {
+func Timestamp() int64 {
 	if testMode {
 		return atomic.AddInt64(&testTimer, 1)
 	}
 	return TimeToInt(time.Now())
+}
+
+func NewNonce() uint64 {
+	return uint64(Timestamp())
 }
 
 func TimeToInt(t time.Time) int64 {

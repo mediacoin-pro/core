@@ -45,20 +45,14 @@ func (s *Storage) SizeOf(txType int) (count int) {
 	return
 }
 
-func (s *Storage) Put(tx *chain.Transaction) (err error) {
+func (s *Storage) Put(tx ...*chain.Transaction) (err error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
-	s.txs[tx.ID()] = tx
-	return
-}
-
-func (s *Storage) PutTxs(txs []*chain.Transaction) (err error) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-
-	for _, tx := range txs {
-		s.txs[tx.ID()] = tx
+	for _, tx := range tx {
+		if tx != nil {
+			s.txs[tx.ID()] = tx
+		}
 	}
 	return
 }
@@ -111,11 +105,11 @@ func (s *Storage) AllTxs() (txs []*chain.Transaction, err error) {
 	return
 }
 
-func (s *Storage) RemoveTxs(txIDs []uint64) (err error) {
+func (s *Storage) RemoveTx(txID ...uint64) (err error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	for _, txID := range txIDs {
-		delete(s.txs, txID)
+	for _, id := range txID {
+		delete(s.txs, id)
 	}
 	return
 }

@@ -44,7 +44,7 @@ func NewTransfer(
 	outs []*TransferOutput,
 	comment string,
 ) *chain.Transaction {
-	nonce := uint64(chain.GenerateNonce())
+	nonce := uint64(chain.NewNonce())
 	//encComment := sender.EncryptRaw(bin.Uint64ToBytes(nonce), []byte(comment), nil)
 	encComment := []byte(comment)
 
@@ -67,13 +67,17 @@ func NewSimpleTransfer(
 	toMemo uint64, //
 	comment string,
 ) *chain.Transaction {
+	var toChainID = chain.DefaultConfig.ChainID
+	if bc != nil {
+		toChainID = bc.Config().ChainID
+	}
 	return NewTransfer(bc, sender, []*TransferOutput{{
 		Asset:     asset,
 		Amount:    amount,
 		Tag:       tag,
 		To:        toAddress,
 		ToMemo:    toMemo,
-		ToChainID: bc.Config().ChainID,
+		ToChainID: toChainID,
 	}}, comment)
 }
 

@@ -152,7 +152,8 @@ func (s *ChainStorage) State() *state.State {
 
 //----------------- put block --------------------------
 func (s *ChainStorage) PutNewBlock(txs []*chain.Transaction, miner *crypto.PrivateKey) (block *chain.Block, err error) {
-	if block, err = chain.GenerateNewBlock(s, txs, miner); err != nil {
+	block, err = chain.GenerateNewBlock(s, txs, miner)
+	if err != nil || block == nil {
 		return
 	}
 	err = s.PutBlock(block)
@@ -171,6 +172,9 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 	// verify blocks
 	lastBlockHeader := s.lastBlock.BlockHeader
 	for _, block := range blocks {
+		for txIdx, tx := range block.Txs {
+			tx.SetBlockInfo(s, block.Num, txIdx, block.Timestamp)
+		}
 		if err := block.Verify(lastBlockHeader, s.Cfg); err != nil {
 			return err
 		}
@@ -355,7 +359,7 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 	}
 
 	// remove txs from Mempool
-	s.Mempool.RemoveTxs(txsIDs)
+	s.Mempool.RemoveTx(txsIDs...)
 
 	return nil
 }
@@ -632,9 +636,10 @@ func (s *ChainStorage) TransactionsByAddr(
 	offset uint64,
 	limit int64,
 	orderDesc bool,
-) (txs []*chain.Transaction, err error) {
+) (txs []*chain.Transaction, nextOffset uint64, err error) {
 	err = s.FetchTransactionsByAddr(asset, addr, memo, offset, limit, orderDesc, func(tx *chain.Transaction, _ bignum.Int) error {
 		txs = append(txs, tx)
+		nextOffset = tx.TxUID()
 		return nil
 	})
 	return
@@ -650,7 +655,7 @@ func (s *ChainStorage) FetchTransactionsByAddr(
 	fn func(tx *chain.Transaction, val bignum.Int) error,
 ) error {
 	if len(asset) == 0 {
-		asset = assets.MDC
+		asset = assets.Default
 	}
 	var q *goldb.Query
 	if memo == 0 { // fetch transactions by address
@@ -721,7 +726,7 @@ func (s *ChainStorage) QueryTransactions(
 	return
 }
 
-// AddressByStr returns address by nickname "@nick", "0x<hexUserID>" or by address "LikeXXXXXXXXXXXX"
+// AddressByStr returns address by nickname "@nick", "0x<hexUserID>" or by address "MDCxxxxxxxxxxxx"
 func (s *ChainStorage) AddressByStr(str string) (addr []byte, memo uint64, err error) {
 	if str == "" {
 		err = ErrAddrNotFound
@@ -797,24 +802,24 @@ func (s *ChainStorage) UserByAddress(addr []byte) (u *txobj.User, err error) {
 	return s.UserByID(crypto.AddressToUserID(addr))
 }
 
-// UserByStr returns user-info by nickname "@nick" or by address "LikeXXXXXXXXXXXX"
-func (s *ChainStorage) UserByStr(nameOrAddr string) (u *txobj.User, err error) {
+// UserByStr returns user-info by nickname "@nick" or by address "MDCxxxxxxxxxxxxxx"
+func (s *ChainStorage) UserByStr(usernameOrAddr string) (u *txobj.User, err error) {
 	switch {
-	case nameOrAddr == "":
+	case usernameOrAddr == "":
 		return
 
-	case nameOrAddr[0] == '@': // search by nick
-		return s.UserByNick(nameOrAddr)
+	case usernameOrAddr[0] == '@': // search by nick
+		return s.UserByNick(usernameOrAddr)
 
-	case strings.HasPrefix(nameOrAddr, "0x"): // search by ID
-		userID, err := strconv.ParseUint(strings.TrimPrefix(nameOrAddr, "0x"), 16, 64)
+	case strings.HasPrefix(usernameOrAddr, "0x"): // search by ID
+		userID, err := strconv.ParseUint(strings.TrimPrefix(usernameOrAddr, "0x"), 16, 64)
 		if err != nil {
 			return nil, err
 		}
 		return s.UserByID(userID)
 
 	default:
-		addr, _, err := crypto.DecodeAddress(nameOrAddr)
+		addr, _, err := crypto.DecodeAddress(usernameOrAddr)
 		if err != nil {
 			return nil, err
 		}
@@ -874,5 +879,35 @@ func (s *ChainStorage) GetBalance(addr, asset []byte) (balance bignum.Int, lastT
 
 func (s *ChainStorage) LastTx(addr []byte, memo uint64, asset []byte) (lastTx *chain.Transaction, err error) {
 	lastTx, _, err = s.QueryTransaction(asset, addr, memo, 0, true)
+	return
+}
+
+func (s *ChainStorage) AddressInfo(addr []byte, memo uint64, asset []byte) (inf *chain.AddressInfo, err error) {
+	if len(asset) == 0 {
+		asset = assets.Default
+	}
+	bal, tx, err := s.GetBalance(addr, asset)
+	if err != nil {
+		return
+	}
+	if memo != 0 {
+		if tx, err = s.LastTx(addr, memo, asset); err != nil {
+			return
+		}
+	}
+	inf = &chain.AddressInfo{
+		Address: addr,
+		Memo:    memo,
+		Asset:   asset,
+		Balance: bal,
+	}
+	if tx != nil {
+		inf.LastTxID = tx.ID()
+		inf.LastTxTs = tx.BlockTs()
+	}
+	if user, _ := s.UserByAddress(addr); user != nil {
+		inf.UserID = user.UserID()
+		inf.UserNick = user.Nick
+	}
 	return
 }
