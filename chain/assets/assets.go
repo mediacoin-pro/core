@@ -7,7 +7,8 @@ import (
 
 var (
 	MDC = []byte{0x01}
-	//FCoin = CoinType{0x02} // todo: remove???
+
+	Default = MDC
 )
 
 const (

@@ -125,7 +125,7 @@ func IsValidAddress(addr160 []byte) bool {
 
 func DecodeAsset(strAsset string) (asset []byte, err error) {
 	if strAsset == "" {
-		asset = assets.MDC
+		asset = assets.Default
 		return
 	}
 	return enc.Base64Decode(strAsset)

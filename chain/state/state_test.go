@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	coin = assets.MDC
+	coin = assets.Default
 
 	addr0 = crypto.MustParseAddress("MDC7pc911d57B3kHa9ucYigJbZ116EGKjW8")
 	addrA = crypto.MustParseAddress("MDC6pUPAxEAAojYVJTF6zULAcK7ZfGdpYkV")
