@@ -1,17 +1,11 @@
 package chain
 
-import (
-	"flag"
-	"os"
-
-	"github.com/mediacoin-pro/core/crypto"
-)
+import "github.com/mediacoin-pro/core/crypto"
 
 type Config struct {
 	NetworkID      int
 	ChainID        uint64
 	MasterKey      string
-	Dir            string
 	VerifyTxsLevel int
 
 	_mkey *crypto.PublicKey
@@ -26,9 +20,6 @@ var DefaultConfig = &Config{
 
 func NewConfig() *Config {
 	cfg := *DefaultConfig
-	cfg.Dir = os.Getenv("HOME") + "/mdc.bc"
-
-	flag.StringVar(&cfg.Dir, "bc-dir", cfg.Dir, "blockchain dir")
 	return &cfg
 }
 

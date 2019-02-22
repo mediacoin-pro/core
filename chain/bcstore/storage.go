@@ -22,6 +22,7 @@ import (
 )
 
 type ChainStorage struct {
+	Dir     string
 	Cfg     *chain.Config
 	db      *goldb.Storage
 	Mempool *mempool.Storage
@@ -73,10 +74,14 @@ var (
 	errIncorrectStateRoot    = errors.New("incorrect state root")
 )
 
-func NewChainStorage(cfg *chain.Config) (s *ChainStorage) {
+func NewChainStorage(dir string, cfg *chain.Config) (s *ChainStorage) {
+	if cfg == nil {
+		cfg = chain.NewConfig()
+	}
 	s = &ChainStorage{
+		Dir:          dir,
 		Cfg:          cfg,
-		db:           goldb.NewStorage(cfg.Dir, nil),
+		db:           goldb.NewStorage(dir, nil),
 		cacheHeaders: gosync.NewCache(10000),
 		cacheTxs:     gosync.NewCache(1000),
 		cacheIdxTx:   gosync.NewCache(50000),
