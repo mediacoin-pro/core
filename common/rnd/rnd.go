@@ -29,7 +29,7 @@ func Int64() int64 {
 }
 
 func Intn(n int) int {
-	return New(nil).Intn(n)
+	return New().Intn(n)
 }
 
 func New(seeds ...interface{}) *rand.Rand {
