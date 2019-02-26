@@ -43,8 +43,9 @@ func NewTransfer(
 	sender *crypto.PrivateKey,
 	outs []*TransferOutput,
 	comment string,
+	nonce uint64,
 ) *chain.Transaction {
-	nonce := uint64(chain.NewNonce())
+
 	//encComment := sender.EncryptRaw(bin.Uint64ToBytes(nonce), []byte(comment), nil)
 	encComment := []byte(comment)
 
@@ -66,6 +67,7 @@ func NewSimpleTransfer(
 	toAddress []byte, //
 	toMemo uint64, //
 	comment string,
+	nonce uint64,
 ) *chain.Transaction {
 	var toChainID = chain.DefaultConfig.ChainID
 	if bc != nil {
@@ -78,7 +80,7 @@ func NewSimpleTransfer(
 		To:        toAddress,
 		ToMemo:    toMemo,
 		ToChainID: toChainID,
-	}}, comment)
+	}}, comment, nonce)
 }
 
 func (tr *Transfer) TotalAmount() (s bignum.Int) {
