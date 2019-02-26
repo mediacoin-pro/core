@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/mediacoin-pro/core/common/bin"
 	"github.com/mediacoin-pro/core/crypto"
 	"github.com/mediacoin-pro/core/crypto/merkle"
-
-	"github.com/mediacoin-pro/core/common/bin"
 )
 
 type BlockHeader struct {
