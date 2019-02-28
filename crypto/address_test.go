@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/mediacoin-pro/core/common/rnd"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +41,7 @@ func TestEncodeAddress_withMemo(t *testing.T) {
 }
 
 func TestDecodeAddress(t *testing.T) {
-	sAddr := EncodeAddress([]byte("Hello, Qwerty-12345!"), 0)
+	const sAddr = " MDC7nQNHaA1Zn9FiSSZNbDMihwme9SUAvsz  "
 
 	addr, memo, err := DecodeAddress(sAddr)
 
@@ -52,7 +51,7 @@ func TestDecodeAddress(t *testing.T) {
 }
 
 func TestDecodeAddress_withMemo(t *testing.T) {
-	sAddr := EncodeAddress([]byte("Hello, Qwerty-12345!"), 666)
+	const sAddr = " MDC3H9786PpFPaEh7KoBwQ5Pp7qEwcrA3iizXj \t"
 
 	addr, memo, err := DecodeAddress(sAddr)
 
