@@ -62,6 +62,7 @@ var (
 )
 
 func DecodeAddress(strAddr string) (addr []byte, memo uint64, err error) {
+	strAddr = strings.TrimSpace(strAddr)
 
 	if len(strAddr) == 34 { // old format
 		addr, err = decodeOldVersionAddress(strAddr)
