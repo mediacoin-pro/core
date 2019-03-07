@@ -118,6 +118,10 @@ func (x Int) Max(y Int) Int {
 	return y
 }
 
+func (x *Int) Increment(y Int) {
+	*x = x.Add(y)
+}
+
 func (x Int) Add(y Int) Int {
 	if x.i == nil {
 		return y
@@ -125,17 +129,6 @@ func (x Int) Add(y Int) Int {
 		return x
 	}
 	return Int{new(big.Int).Add(x.i, y.i)}
-}
-
-func (x *Int) Increment(y Int) {
-	if y.IsZero() {
-		return
-	}
-	if x.i == nil {
-		x.i = new(big.Int)
-	}
-	x.i = x.i.Add(x.i, y.i)
-	return
 }
 
 func (x Int) AddInt64(y int64) Int {

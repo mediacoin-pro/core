@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/mediacoin-pro/core/common/bin"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,6 +80,18 @@ func TestInt_Add(t *testing.T) {
 	assert.Equal(t, NewInt(2), x)
 	assert.Equal(t, NewInt(3), y)
 	assert.Equal(t, NewInt(5), z)
+}
+
+func TestInt_Increment(t *testing.T) {
+	var x Int
+	var y = NewInt(1)
+
+	for i := 0; i < 10000; i++ {
+		x.Increment(y)
+	}
+
+	assert.Equal(t, NewInt(10000), x)
+	assert.Equal(t, NewInt(1), y)
 }
 
 func TestInt_Mul(t *testing.T) {
