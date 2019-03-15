@@ -243,6 +243,8 @@ func (w *Writer) writeVar(val interface{}) error {
 		w.WriteFloat64(v)
 	case time.Time:
 		w.WriteTime(v)
+	case time.Duration:
+		w.WriteVarInt64(int64(v))
 	case bool:
 		w.WriteBool(v)
 

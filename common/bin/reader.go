@@ -342,6 +342,9 @@ func (r *Reader) readVar(val interface{}) error {
 		*v, _ = r.ReadFloat64()
 	case *time.Time:
 		*v, _ = r.ReadTime()
+	case *time.Duration:
+		dt, _ := r.ReadVarInt64()
+		*v = time.Duration(dt)
 	case *bool:
 		*v, _ = r.ReadBool()
 
