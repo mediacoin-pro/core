@@ -803,11 +803,15 @@ func (s *ChainStorage) UserByNick(nick string) (u *txobj.User, err error) {
 	return
 }
 
-func (s *ChainStorage) UserByAddress(addr []byte) (u *txobj.User, err error) {
-	return s.UserByID(crypto.AddressToUserID(addr))
+func (s *ChainStorage) UserByAddress(addr []byte) (*txobj.User, error) {
+	if u, err := s.UserByID(crypto.AddressToUserID(addr)); err == nil && u != nil && bytes.Equal(u.Address(), addr) {
+		return u, err
+	} else {
+		return nil, err
+	}
 }
 
-// UserByStr returns user-info by nickname "@nick" or by address "MDCxxxxxxxxxxxxxx"
+// UserInfoByStr returns user-info by nickname "@nick" or by address "MDCxxxxxxxxxxxxxx"
 func (s *ChainStorage) UserByStr(usernameOrAddr string) (u *txobj.User, err error) {
 	switch {
 	case usernameOrAddr == "":
