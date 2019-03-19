@@ -53,16 +53,22 @@ func BoolToBytes(val bool) []byte {
 }
 
 func BytesToUint16(b []byte) uint16 {
-	if len(b) < 2 {
-		b = append(make([]byte, 2-len(b)), b...)
+	if n := len(b); n < 2 {
+		if n == 0 {
+			return 0
+		}
+		b = append(make([]byte, 2-n), b...)
 	}
 	return uint16(b[1]) |
 		(uint16(b[0]) << 8)
 }
 
 func BytesToUint32(b []byte) uint32 {
-	if len(b) < 4 {
-		b = append(make([]byte, 4-len(b)), b...)
+	if n := len(b); n < 4 {
+		if n == 0 {
+			return 0
+		}
+		b = append(make([]byte, 4-n), b...)
 	}
 	return uint32(b[3]) |
 		(uint32(b[2]) << 8) |
@@ -71,8 +77,11 @@ func BytesToUint32(b []byte) uint32 {
 }
 
 func BytesToUint64(b []byte) uint64 {
-	if len(b) < 8 {
-		b = append(make([]byte, 8-len(b)), b...)
+	if n := len(b); n < 8 {
+		if n == 0 {
+			return 0
+		}
+		b = append(make([]byte, 8-n), b...)
 	}
 	return uint64(b[7]) |
 		(uint64(b[6]) << 8) |
