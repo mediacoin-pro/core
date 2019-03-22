@@ -745,15 +745,22 @@ func (s *ChainStorage) AddressByStr(str string) (addr []byte, memo uint64, err e
 		}
 	}
 	if len(str) == 18 && str[:2] == "0x" { // address by userID "0x<userID:hex>"
-		if userID, err := strconv.ParseUint(str[2:], 16, 64); err != nil {
+		userID, err := strconv.ParseUint(str[2:], 16, 64)
+		if err != nil {
 			return nil, 0, errIncorrectAddress
-		} else if u, err := s.UserByID(userID); err != nil || u == nil {
-			return nil, 0, err
-		} else {
-			return u.Address(), 0, nil
 		}
+		addr, err := s.AddressByUserID(userID)
+		return addr, 0, err
 	}
 	return crypto.DecodeAddress(str)
+}
+
+func (s *ChainStorage) AddressByUserID(userID uint64) (addr []byte, err error) {
+	u, err := s.UserByID(userID)
+	if err != nil || u == nil {
+		return
+	}
+	return u.Address(), nil
 }
 
 func (s *ChainStorage) UsernameByID(userID uint64) (nick string, err error) {
