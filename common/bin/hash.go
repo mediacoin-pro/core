@@ -1,6 +1,9 @@
 package bin
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+	"hash/fnv"
+)
 
 func Hash32(values ...interface{}) uint32 {
 	h256 := Hash256(values...)
@@ -29,4 +32,13 @@ func Hash256(values ...interface{}) []byte {
 		w.WriteVar(val)
 	}
 	return hash.Sum(nil)
+}
+
+func FastHash64(values ...interface{}) uint64 {
+	hash := fnv.New64()
+	w := NewWriter(hash)
+	for _, val := range values {
+		w.WriteVar(val)
+	}
+	return hash.Sum64()
 }
