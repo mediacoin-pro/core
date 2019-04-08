@@ -27,12 +27,12 @@ var (
 )
 
 var (
-	Level            = LevelWarning
+	Level  int
 	logOut io.Writer = os.Stderr
 )
 
 func init() {
-	refreshLoggers()
+	SetLogLevel(LevelWarning)
 }
 
 func newLogger(prefix string) *log.Logger {
@@ -40,20 +40,32 @@ func newLogger(prefix string) *log.Logger {
 }
 
 func refreshLoggers() {
-	refreshLoger(Fatal, LevelFatal)
-	refreshLoger(Error, LevelError)
-	refreshLoger(Warning, LevelWarning)
-	refreshLoger(Info, LevelInfo)
-	refreshLoger(Debug, LevelDebug)
-	refreshLoger(Trace, LevelTrace)
+	refreshLogger(Fatal, LevelFatal)
+	refreshLogger(Error, LevelError)
+	refreshLogger(Warning, LevelWarning)
+	refreshLogger(Info, LevelInfo)
+	refreshLogger(Debug, LevelDebug)
+	refreshLogger(Trace, LevelTrace)
 }
 
-func refreshLoger(logger *log.Logger, loggerLv int) {
+func refreshLogger(logger *log.Logger, loggerLv int) {
 	if loggerLv <= Level {
 		logger.SetOutput(logOut)
 	} else {
 		logger.SetOutput(ioutil.Discard)
 	}
+}
+
+func TraceIsOn() bool {
+	return Level >= LevelTrace
+}
+
+func DebugIsOn() bool {
+	return Level >= LevelDebug
+}
+
+func InfoIsOn() bool {
+	return Level >= LevelInfo
 }
 
 func SetLogLevel(lv int) {
