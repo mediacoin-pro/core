@@ -1,6 +1,9 @@
 package bin
 
-import "io"
+import (
+	"io"
+	"os"
+)
 
 type Encoder interface {
 	Encode() []byte
@@ -28,6 +31,28 @@ func Write(w io.Writer, v ...interface{}) error {
 	buf := NewBuffer(nil, v...)
 	_, err := io.Copy(w, buf.Buffer())
 	return err
+}
+
+func ReadFile(name string, v ...interface{}) error {
+	f, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	if err = Read(f, v...); err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func WriteFile(name string, perm os.FileMode, v ...interface{}) error {
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
+	if err = Write(f, v...); err != nil {
+		return err
+	}
+	return f.Close()
 }
 
 type binaryEncoder interface {
