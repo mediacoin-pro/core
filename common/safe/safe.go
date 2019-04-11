@@ -1,6 +1,7 @@
 package safe
 
 import (
+	"fmt"
 	"runtime/debug"
 	"time"
 
@@ -23,6 +24,18 @@ func Loop(duration time.Duration, fn func()) {
 func Recover() {
 	defer func() { recover() }()
 	if r := recover(); r != nil {
+		ss := debug.Stack()
+		xlog.Fatal.Print("Panic:\n", string(ss))
+		xlog.Fatal.Printf("FATAL-ERR: %v", r)
+	}
+}
+
+func RecoverError(err *error) {
+	defer func() { recover() }()
+	if r := recover(); r != nil {
+		if err != nil {
+			*err = fmt.Errorf("PANIC-ERROR: %v", r)
+		}
 		ss := debug.Stack()
 		xlog.Fatal.Print("Panic:\n", string(ss))
 		xlog.Fatal.Printf("FATAL-ERR: %v", r)
