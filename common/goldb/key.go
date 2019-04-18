@@ -81,6 +81,5 @@ func encodeUint(id uint64) []byte {
 }
 
 func decodeUint(data []byte) (uint64, error) {
-	r := bin.NewBuffer(data)
-	return r.ReadVarUint64()
+	return bin.NewBuffer(data).ReadVarUint64()
 }

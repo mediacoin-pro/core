@@ -5,6 +5,15 @@ import (
 	"unicode"
 )
 
+func NoEmpty(ss ...string) string {
+	for _, s := range ss {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
 func InSlice(ss []string, str string) bool {
 	return IndexOf(ss, str) >= 0
 }
