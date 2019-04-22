@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/json"
+	"errors"
 	"math/big"
 
 	"github.com/mediacoin-pro/core/common/bin"
@@ -17,6 +18,8 @@ type PrivateKey struct {
 	pub *PublicKey
 }
 
+var errInvalidPrivateKey = errors.New("Invalid private key")
+
 func NewPrivateKey() *PrivateKey {
 	return generateKey(randInt())
 }
@@ -30,11 +33,14 @@ func MustParsePrivateKey(prvKey64 string) (prv *PrivateKey) {
 }
 
 func ParsePrivateKey(prvKey64 string) (prv *PrivateKey, err error) {
-	bb, err := enc.Base64Decode(prvKey64)
-	if err == nil {
-		prv = decodePrivateKey(bb)
+	if prvKey64 == "" {
+		return nil, errInvalidPrivateKey
 	}
-	return
+	bb, err := enc.Base64Decode(prvKey64)
+	if err != nil {
+		return
+	}
+	return decodePrivateKey(bb)
 }
 
 func NewPrivateKeyBySecret(secret string) *PrivateKey {
@@ -42,11 +48,11 @@ func NewPrivateKeyBySecret(secret string) *PrivateKey {
 	return generateKey(normInt(key))
 }
 
-func decodePrivateKey(b []byte) *PrivateKey {
+func decodePrivateKey(b []byte) (*PrivateKey, error) {
 	if len(b) < 1 || b[0] != PrivateKeyVersion {
-		return nil
+		return nil, errInvalidPrivateKey
 	}
-	return generateKey(new(big.Int).SetBytes(b[1:]))
+	return generateKey(new(big.Int).SetBytes(b[1:])), nil
 }
 
 func (prv *PrivateKey) SubKey(subKeyName string) *PrivateKey {
