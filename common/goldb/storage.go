@@ -23,6 +23,13 @@ type Storage struct {
 	mx  sync.Mutex
 
 	cntWaitingTrans int64
+
+	// batch params
+	batchMx   sync.Mutex
+	batchSync bool
+	batchCl   chan struct{}
+	batchErr  *error
+	batchTxs  []func(*Transaction)
 }
 
 func NewStorage(dir string, op *opt.Options) (s *Storage) {
@@ -237,37 +244,37 @@ func (s *Storage) copyDataToNewDB(dir string) (err error) {
 }
 
 func (s *Storage) Put(key, data []byte) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.Put(key, data)
 	})
 }
 
 func (s *Storage) PutID(key []byte, id uint64) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.PutID(key, id)
 	})
 }
 
 func (s *Storage) PutInt(key []byte, num int64) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.PutInt(key, num)
 	})
 }
 
 func (s *Storage) PutVar(key []byte, v interface{}) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.PutVar(key, v)
 	})
 }
 
 func (s *Storage) Delete(key []byte) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.Delete(key)
 	})
 }
 
 func (s *Storage) RemoveByQuery(q *Query) error {
-	return s.Exec(func(tr *Transaction) {
+	return s.ExecBatch(func(tr *Transaction) {
 		tr.Fetch(q, func(rec Record) error {
 			tr.Delete(rec.Key)
 			return nil
