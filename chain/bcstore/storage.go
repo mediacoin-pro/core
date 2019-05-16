@@ -383,10 +383,10 @@ func (s *ChainStorage) DBSize() int64 {
 	return s.db.Size()
 }
 
-func (s *ChainStorage) Totals() *Statistic {
+func (s *ChainStorage) Totals() Statistic {
 	s.mxR.RLock()
 	defer s.mxR.RUnlock()
-	return s.stat.Clone()
+	return *s.stat
 }
 
 func (s *ChainStorage) CountBlocks() uint64 {

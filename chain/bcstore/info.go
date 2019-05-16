@@ -5,7 +5,7 @@ import "github.com/mediacoin-pro/core/chain"
 type Info struct {
 	Network   int                `json:"network"`    //
 	ChainID   uint64             `json:"chain"`      //
-	Stat      *Statistic         `json:"stat"`       //
+	Stat      Statistic          `json:"stat"`       //
 	LastBlock *chain.BlockHeader `json:"last_block"` //
 }
 
