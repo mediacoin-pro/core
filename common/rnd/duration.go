@@ -25,3 +25,7 @@ func Duration(minValue time.Duration, kDispersion float64) time.Duration {
 func Sleep(minValue time.Duration, kDispersion float64) {
 	time.Sleep(Duration(minValue, kDispersion))
 }
+
+func String(ss ...string) string {
+	return ss[rand.Intn(len(ss))]
+}

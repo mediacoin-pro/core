@@ -36,7 +36,7 @@ func New(seeds ...interface{}) *rand.Rand {
 	if len(seeds) == 0 {
 		return rand.New(rand.NewSource(Int64()))
 	}
-	return rand.New(rand.NewSource(int64(bin.Hash64(seeds...))))
+	return rand.New(rand.NewSource(int64(bin.FastHash64(seeds...))))
 }
 
 func Shuffle(slice interface{}, seed ...interface{}) {
