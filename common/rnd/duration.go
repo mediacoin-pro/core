@@ -3,6 +3,8 @@ package rnd
 import (
 	"math/rand"
 	"time"
+
+	"github.com/mediacoin-pro/core/common/sys"
 )
 
 type TimeDuration struct {
@@ -23,7 +25,7 @@ func Duration(minValue time.Duration, kDispersion float64) time.Duration {
 }
 
 func Sleep(minValue time.Duration, kDispersion float64) {
-	time.Sleep(Duration(minValue, kDispersion))
+	sys.Sleep(Duration(minValue, kDispersion))
 }
 
 func String(ss ...string) string {
