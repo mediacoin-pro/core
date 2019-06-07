@@ -1,10 +1,10 @@
 package gosync
 
 import (
-	"bytes"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"sync"
 )
@@ -16,12 +16,6 @@ type Map struct {
 	mx   sync.RWMutex
 	ver  uint64
 	vals map[interface{}]interface{}
-}
-
-func NewMap(values map[interface{}]interface{}) Map {
-	return Map{
-		vals: values,
-	}
 }
 
 func normKey(key interface{}) interface{} {
@@ -39,48 +33,67 @@ func (m *Map) Clear() {
 }
 
 func (m *Map) Set(key, value interface{}) {
+	key = normKey(key)
+
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	if m.vals == nil {
 		m.vals = map[interface{}]interface{}{}
 	}
-	m.vals[normKey(key)] = value
+	m.vals[key] = value
 	m.ver++
 }
 
-func (m *Map) Increment(key interface{}, val int64) {
+func (m *Map) Increment(key interface{}, val int64) int64 {
+	key = normKey(key)
+
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	if m.vals == nil {
 		m.vals = map[interface{}]interface{}{}
 	}
-	if v, ok := m.vals[normKey(key)].(int64); ok {
+	if v, ok := m.vals[key].(int64); ok {
 		val += v
 	}
-	m.vals[normKey(key)] = val
+	m.vals[key] = val
 	m.ver++
+	return val
 }
 
 func (m *Map) Delete(key interface{}) {
+	key = normKey(key)
+
 	m.mx.Lock()
 	defer m.mx.Unlock()
-	delete(m.vals, normKey(key))
-	m.ver++
+
+	if m.vals != nil {
+		delete(m.vals, key)
+		m.ver++
+	}
 }
 
 func (m *Map) Get(key interface{}) interface{} {
+	key = normKey(key)
+
 	m.mx.RLock()
 	defer m.mx.RUnlock()
-	if v, ok := m.vals[normKey(key)]; ok {
-		return v
+
+	if m.vals != nil {
+		return m.vals[key]
 	}
 	return nil
 }
 
 func (m *Map) Exists(key interface{}) bool {
+	key = normKey(key)
+
 	m.mx.RLock()
 	defer m.mx.RUnlock()
-	_, ok := m.vals[normKey(key)]
+
+	if m.vals == nil {
+		return false
+	}
+	_, ok := m.vals[key]
 	return ok
 }
 
@@ -101,8 +114,10 @@ func (m *Map) KeyValues() map[interface{}]interface{} {
 	defer m.mx.RUnlock()
 
 	res := map[interface{}]interface{}{}
-	for k, v := range m.vals {
-		res[k] = v
+	if m.vals != nil {
+		for k, v := range m.vals {
+			res[k] = v
+		}
 	}
 	return res
 }
@@ -112,8 +127,10 @@ func (m *Map) Keys() []interface{} {
 	defer m.mx.RUnlock()
 
 	vv := make([]interface{}, 0, len(m.vals))
-	for key := range m.vals {
-		vv = append(vv, key)
+	if m.vals != nil {
+		for key := range m.vals {
+			vv = append(vv, key)
+		}
 	}
 	return vv
 }
@@ -123,8 +140,10 @@ func (m *Map) Values() []interface{} {
 	defer m.mx.RUnlock()
 
 	vv := make([]interface{}, 0, len(m.vals))
-	for _, v := range m.vals {
-		vv = append(vv, v)
+	if m.vals != nil {
+		for _, v := range m.vals {
+			vv = append(vv, v)
+		}
 	}
 	return vv
 }
@@ -134,8 +153,10 @@ func (m *Map) String() string {
 	defer m.mx.RUnlock()
 
 	ss := map[string]string{}
-	for k, v := range m.vals {
-		ss[encString(k)] = encString(v)
+	if m.vals != nil {
+		for k, v := range m.vals {
+			ss[encString(k)] = encString(v)
+		}
 	}
 	return encString(ss)
 }
@@ -151,10 +172,12 @@ func (m *Map) Strings() []string {
 func (m *Map) Pop() (key, value interface{}) {
 	m.mx.Lock()
 	defer m.mx.Unlock()
-	for key, value = range m.vals {
-		delete(m.vals, key)
-		m.ver++
-		return
+	if m.vals != nil {
+		for key, value = range m.vals {
+			delete(m.vals, key)
+			m.ver++
+			return
+		}
 	}
 	return
 }
@@ -196,20 +219,18 @@ func (m *Map) Random() (key, value interface{}) {
 	return nil, nil
 }
 
-func (m *Map) Dump() ([]byte, error) {
+func (m *Map) BinaryEncode(w io.Writer) error {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
-	buf := bytes.NewBuffer(nil)
-	err := gob.NewEncoder(buf).Encode(m.vals)
-	return buf.Bytes(), err
+	return gob.NewEncoder(w).Encode(m.vals)
 }
 
-func (m *Map) Restore(data []byte) (err error) {
+func (m *Map) BinaryDecode(r io.Reader) (err error) {
 	m.mx.Lock()
 	defer m.mx.Unlock()
 
-	err = gob.NewDecoder(bytes.NewBuffer(data)).Decode(&m.vals)
+	err = gob.NewDecoder(r).Decode(&m.vals)
 	m.ver++
 	return
 }

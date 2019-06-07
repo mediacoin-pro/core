@@ -18,10 +18,12 @@ func (m *Cache) Set(key, value interface{}) {
 		m.vals = map[interface{}]interface{}{}
 	}
 	key = normKey(key)
-	if _, ok := m.vals[key]; !ok && len(m.vals) >= m.Limit {
-		for k, _ := range m.vals { // remove any key
-			delete(m.vals, k)
-			break
+	if len(m.vals) >= m.Limit {
+		if _, ok := m.vals[key]; !ok {
+			for k := range m.vals { // remove any key
+				delete(m.vals, k)
+				break
+			}
 		}
 	}
 	m.vals[key] = value
