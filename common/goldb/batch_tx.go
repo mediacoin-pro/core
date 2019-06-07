@@ -38,7 +38,7 @@ func (s *Storage) startBatchSync() {
 		s.batchMx.Unlock()
 		//
 		if len(txs) == 0 {
-			time.Sleep(time.Millisecond)
+			time.Sleep(5 * time.Millisecond)
 			continue
 		}
 		t0 := time.Now()
