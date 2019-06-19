@@ -3,7 +3,6 @@ package crypto
 import (
 	"crypto/elliptic"
 	"crypto/rand"
-	"io"
 	"math/big"
 )
 
@@ -48,7 +47,7 @@ func hashInt(data []byte) *big.Int {
 
 func randBytes(n int) []byte {
 	buf := make([]byte, n)
-	if _, err := io.ReadFull(rand.Reader, buf); err != nil {
+	if _, err := rand.Read(buf); err != nil {
 		panic("reading from crypto/rand failed: " + err.Error())
 	}
 	return buf

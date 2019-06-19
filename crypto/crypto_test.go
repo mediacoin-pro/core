@@ -48,7 +48,7 @@ func TestPrivateKey_D(t *testing.T) {
 	org := NewPrivateKey()
 	buf := org.Bytes()
 
-	decPrv := decodePrivateKey(buf)
+	decPrv, _ := decodePrivateKey(buf)
 
 	assert.Equal(t, org, decPrv)
 }
