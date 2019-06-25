@@ -3,6 +3,7 @@ package bin
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"io"
 	"math"
 	"math/big"
@@ -201,13 +202,19 @@ func (w *Writer) WriteError(err error) error {
 	return w.WriteString(err.Error())
 }
 
-func (w *Writer) WriteVar(val ...interface{}) error {
+func (w *Writer) WriteVar(val ...interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("bin.WriteVar-Error: %v", r)
+			w.err = err
+		}
+	}()
 	for _, v := range val {
-		if err := w.writeVar(v); err != nil {
+		if err = w.writeVar(v); err != nil {
 			return err
 		}
 	}
-	return nil
+	return
 }
 
 func (w *Writer) writeVar(val interface{}) error {
