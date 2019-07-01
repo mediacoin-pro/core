@@ -16,3 +16,11 @@ func TestParsePrivateKey(t *testing.T) {
 	assert.Equal(t, prv.Bytes(), prv2.Bytes())
 	assert.Equal(t, prv.String(), prv2.String())
 }
+
+func TestParsePrivateKey_EmptyStr_Fail(t *testing.T) {
+
+	prv, err := ParsePrivateKey("")
+
+	assert.Error(t, err)
+	assert.Nil(t, prv)
+}
