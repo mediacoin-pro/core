@@ -2,6 +2,7 @@ package txobj
 
 import (
 	"github.com/mediacoin-pro/core/chain"
+	"github.com/mediacoin-pro/core/chain/assets"
 	"github.com/mediacoin-pro/core/chain/state"
 	"github.com/mediacoin-pro/core/common/hex"
 	"github.com/mediacoin-pro/core/common/json"
@@ -72,6 +73,9 @@ func NewSimpleTransfer(
 	var toChainID = chain.DefaultConfig.ChainID
 	if bc != nil {
 		toChainID = bc.Config().ChainID
+	}
+	if asset == nil {
+		asset = assets.Default
 	}
 	return NewTransfer(bc, sender, []*TransferOutput{{
 		Asset:     asset,
