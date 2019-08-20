@@ -29,10 +29,9 @@ func Read(r io.Reader, v ...interface{}) error {
 	return NewReader(r).ReadVar(v...)
 }
 
-func Write(w io.Writer, v ...interface{}) error {
+func Write(w io.Writer, v ...interface{}) (int64, error) {
 	buf := NewBuffer(nil, v...)
-	_, err := io.Copy(w, buf.Buffer())
-	return err
+	return io.Copy(w, buf.Buffer())
 }
 
 func ReadFile(name string, v ...interface{}) error {
@@ -46,12 +45,12 @@ func ReadFile(name string, v ...interface{}) error {
 	return f.Close()
 }
 
-func WriteFile(name string, perm os.FileMode, v ...interface{}) error {
-	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+func WriteFile(name string, v ...interface{}) error {
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
-	if err = Write(f, v...); err != nil {
+	if _, err = Write(f, v...); err != nil {
 		return err
 	}
 	return f.Close()
