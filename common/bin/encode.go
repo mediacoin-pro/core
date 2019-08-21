@@ -1,6 +1,7 @@
 package bin
 
 import (
+	"compress/gzip"
 	"io"
 	"os"
 )
@@ -54,6 +55,36 @@ func WriteFile(name string, v ...interface{}) error {
 		return err
 	}
 	return f.Close()
+}
+
+func UngzipFile(name string, v ...interface{}) (err error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		return nil
+	}
+	defer r.Close()
+
+	return Read(r, v...)
+}
+
+func GzipFile(name string, v ...interface{}) (err error) {
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := gzip.NewWriter(f)
+	if _, err = Write(w, v...); err != nil {
+		return err
+	}
+	return w.Close()
 }
 
 type binaryEncoder interface {
