@@ -15,6 +15,9 @@ type Decoder interface {
 }
 
 func Encode(vv ...interface{}) []byte {
+	if len(vv) == 0 {
+		return nil
+	}
 	w := NewBuffer(nil)
 	if err := w.WriteVar(vv...); err != nil {
 		panic(err)
