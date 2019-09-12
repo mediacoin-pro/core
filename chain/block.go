@@ -155,10 +155,34 @@ func (b *Block) txRoot() []byte {
 
 func (b *Block) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		*BlockHeader
-		Txs []*Transaction `json:"txs"` //
+		Version   int               `json:"version"`       // version
+		Network   int               `json:"network"`       // networkID
+		ChainID   uint64            `json:"chain"`         //
+		Num       uint64            `json:"height"`        // number of block in blockchain
+		Timestamp int64             `json:"timestamp"`     // timestamp of block in µsec
+		Hash      bin.Bytes         `json:"hash"`          // hash of block
+		PrevHash  bin.Bytes         `json:"previous_hash"` // hash of previous block
+		TxRoot    bin.Bytes         `json:"tx_root"`       // merkle root of block-transactions
+		StateRoot bin.Bytes         `json:"state_root"`    // patricia root of global state
+		ChainRoot bin.Bytes         `json:"chain_root"`    // patricia root of chain
+		Nonce     uint64            `json:"nonce"`         //
+		Miner     *crypto.PublicKey `json:"miner"`         // miner public-key
+		Sig       bin.Bytes         `json:"sig"`           // miner signature  := minerKey.Sign( blockHash + chainRoot )
+		Txs       []*Transaction    `json:"txs"`           //
 	}{
-		BlockHeader: b.BlockHeader,
-		Txs:         b.Txs,
+		Version:   b.Version,
+		Network:   b.Network,
+		ChainID:   b.ChainID,
+		Num:       b.Num,
+		Timestamp: b.Timestamp,
+		Hash:      b.Hash(),
+		PrevHash:  b.PrevHash,
+		TxRoot:    b.TxRoot,
+		StateRoot: b.StateRoot,
+		ChainRoot: b.ChainRoot,
+		Nonce:     b.Nonce,
+		Miner:     b.Miner,
+		Sig:       b.Sig,
+		Txs:       b.Txs,
 	})
 }
