@@ -2,6 +2,7 @@ package chain
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"github.com/mediacoin-pro/core/common/bin"
@@ -10,25 +11,25 @@ import (
 )
 
 type BlockHeader struct {
-	Version   int       `json:"version"`       // version
-	Network   int       `json:"network"`       // networkID
-	ChainID   uint64    `json:"chain"`         //
-	Num       uint64    `json:"height"`        // number of block in blockchain
-	Timestamp int64     `json:"timestamp"`     // timestamp of block in µsec
-	PrevHash  bin.Bytes `json:"previous_hash"` // hash of previous block
-	TxRoot    bin.Bytes `json:"tx_root"`       // merkle root of block-transactions
-	StateRoot bin.Bytes `json:"state_root"`    // patricia root of global state
-	ChainRoot bin.Bytes `json:"chain_root"`    // patricia root of chain
+	Version   int       // version
+	Network   int       // networkID
+	ChainID   uint64    //
+	Num       uint64    // number of block in blockchain
+	Timestamp int64     // timestamp of block in µsec
+	PrevHash  bin.Bytes // hash of previous block
+	TxRoot    bin.Bytes // merkle root of block-transactions
+	StateRoot bin.Bytes // patricia root of global state
+	ChainRoot bin.Bytes // patricia root of chain
 
 	// miner params
-	Nonce uint64            `json:"nonce"` //
-	Miner *crypto.PublicKey `json:"miner"` // miner public-key
-	Sig   bin.Bytes         `json:"sig"`   // miner signature  := minerKey.Sign( blockHash + chainRoot )
+	Nonce uint64            //
+	Miner *crypto.PublicKey // miner public-key
+	Sig   bin.Bytes         // miner signature  := minerKey.Sign( blockHash + chainRoot )
 
 	// reserved
-	Reserved1 []byte `json:"-"`
-	Reserved2 []byte `json:"-"`
-	Reserved3 []byte `json:"-"`
+	Reserved1 []byte
+	Reserved2 []byte
+	Reserved3 []byte
 }
 
 func (b *BlockHeader) String() string {
@@ -141,4 +142,36 @@ func (b *BlockHeader) VerifyHeader(pre *BlockHeader, cfg *Config) error {
 		return ErrInvalidBlockSig
 	}
 	return nil
+}
+
+func (b *BlockHeader) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Version   int               `json:"version"`       // version
+		Network   int               `json:"network"`       // networkID
+		ChainID   uint64            `json:"chain"`         //
+		Num       uint64            `json:"height"`        // number of block in blockchain
+		Timestamp int64             `json:"timestamp"`     // timestamp of block in µsec
+		Hash      bin.Bytes         `json:"hash"`          // hash of block
+		PrevHash  bin.Bytes         `json:"previous_hash"` // hash of previous block
+		TxRoot    bin.Bytes         `json:"tx_root"`       // merkle root of block-transactions
+		StateRoot bin.Bytes         `json:"state_root"`    // patricia root of global state
+		ChainRoot bin.Bytes         `json:"chain_root"`    // patricia root of chain
+		Nonce     uint64            `json:"nonce"`         //
+		Miner     *crypto.PublicKey `json:"miner"`         // miner public-key
+		Sig       bin.Bytes         `json:"sig"`           // miner signature  := minerKey.Sign( blockHash + chainRoot )
+	}{
+		Version:   b.Version,
+		Network:   b.Network,
+		ChainID:   b.ChainID,
+		Num:       b.Num,
+		Timestamp: b.Timestamp,
+		Hash:      b.Hash(),
+		PrevHash:  b.PrevHash,
+		TxRoot:    b.TxRoot,
+		StateRoot: b.StateRoot,
+		ChainRoot: b.ChainRoot,
+		Nonce:     b.Nonce,
+		Miner:     b.Miner,
+		Sig:       b.Sig,
+	})
 }

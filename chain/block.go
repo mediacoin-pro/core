@@ -2,6 +2,7 @@ package chain
 
 import (
 	"bytes"
+	"encoding/json"
 
 	"github.com/mediacoin-pro/core/common/bin"
 	"github.com/mediacoin-pro/core/crypto"
@@ -10,7 +11,7 @@ import (
 
 type Block struct {
 	*BlockHeader
-	Txs []*Transaction `json:"txs"`
+	Txs []*Transaction
 }
 
 func NewBlock(h *BlockHeader, txs []*Transaction) *Block {
@@ -150,4 +151,14 @@ func (b *Block) txRoot() []byte {
 		hh = append(hh, it.TxStHash())
 	}
 	return merkle.Root(hh...)
+}
+
+func (b *Block) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		*BlockHeader
+		Txs []*Transaction `json:"txs"` //
+	}{
+		BlockHeader: b.BlockHeader,
+		Txs:         b.Txs,
+	})
 }
