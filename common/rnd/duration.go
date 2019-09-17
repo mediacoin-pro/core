@@ -20,8 +20,8 @@ func (r TimeDuration) MaxValue() time.Duration {
 	return time.Duration(float64(r.MinValue) * (1 + r.KDisp))
 }
 
-func Duration(minValue time.Duration, kDispersion float64) time.Duration {
-	return time.Duration(float64(minValue) * (1 + kDispersion*rand.Float64()))
+func Duration(minValue time.Duration, kDispersion float64, seed ...interface{}) time.Duration {
+	return time.Duration(float64(minValue) * (1 + kDispersion*New(seed).Float64()))
 }
 
 func Sleep(minValue time.Duration, kDispersion float64) {
