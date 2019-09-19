@@ -41,6 +41,9 @@ func (r *Reader) SetError(err error) {
 }
 
 func (r *Reader) Close() error {
+	if r == nil {
+		return nil
+	}
 	if c, ok := r.rd.(io.Closer); ok {
 		return c.Close()
 	}
@@ -280,7 +283,7 @@ func (r *Reader) readMap(p reflect.Value) {
 			p.Set(reflect.Zero(p.Type()))
 			return
 		}
-		mp := reflect.MakeMap(p.Type())
+		mp := reflect.MakeMapWithSize(p.Type(), n)
 		key := reflect.New(p.Type().Key())
 		val := reflect.New(p.Type().Elem())
 		for i := 0; i < n && r.err == nil; i++ {
