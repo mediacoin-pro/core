@@ -5,20 +5,37 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/mediacoin-pro/core/common/sys"
 	"github.com/mediacoin-pro/core/common/xlog"
 )
 
+func Go(fn func()) {
+	go Exec(fn)
+}
+
 func Exec(fn func()) {
-	defer func() { recover() }()
 	defer Recover()
 	fn()
 }
 
 func Loop(duration time.Duration, fn func()) {
+	if duration == 0 {
+		duration = time.Millisecond
+	}
 	for {
 		Exec(fn)
-		time.Sleep(duration)
+		sys.Sleep(duration)
 	}
+}
+
+func Watch(fn func() interface{}, event func()) {
+	var _v = fn()
+	go Loop(0, func() {
+		if v := fn(); v != _v {
+			_v = v
+			Exec(event)
+		}
+	})
 }
 
 func Recover() {
