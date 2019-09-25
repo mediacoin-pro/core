@@ -46,6 +46,10 @@ func init() {
 	}()
 }
 
+func Unix() int64 {
+	return atomic.LoadInt64(&now) / 1e9
+}
+
 func UnixNano() int64 {
 	return atomic.LoadInt64(&now)
 }
