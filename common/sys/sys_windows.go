@@ -14,11 +14,14 @@ func RunFile(filename string) error {
 	return run("cmd", "/C", escExecPath(filename))
 }
 
-func ShowInExplorer(filePath string) (err error) {
+func ShowInExplorer(filePath string) error {
 	if IsDir(filePath) {
-		return run("explorer", SystemPath(filePath))
+		run("explorer", SystemPath(filePath))
+	} else {
+		run("explorer", "/select,", SystemPath(filePath))
 	}
-	return run("explorer", "/select,", SystemPath(filePath))
+	// ignore error
+	return nil
 }
 
 // Link uses std window-cmd mklink
