@@ -18,6 +18,10 @@ func NewInt(i int64) Int {
 	return Int{big.NewInt(i)}
 }
 
+func NewFromBytes(b []byte) Int {
+	return Int{new(big.Int).SetBytes(b)}
+}
+
 func (x Int) Int64() int64 {
 	if x.i == nil {
 		return 0
