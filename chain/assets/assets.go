@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	MDC = []byte{0x01}
+	MDC  = []byte{0x01}
+	AUTH = []byte{0x02} // Users auth-info (User`s public key)
 
 	Default = MDC
 )

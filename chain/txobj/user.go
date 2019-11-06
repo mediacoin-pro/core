@@ -31,7 +31,7 @@ func NewUser(
 	nick string,
 	referrerID uint64,
 ) *chain.Transaction {
-	return chain.NewTx(bc, sender, 0, &User{
+	return chain.NewTx(bc, nil, sender, 0, &User{
 		Nick:       nick,
 		ReferrerID: referrerID,
 	})

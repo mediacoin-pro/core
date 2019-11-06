@@ -48,7 +48,8 @@ type Transaction struct {
 
 func NewTx(
 	bc BCContext,
-	sender *crypto.PrivateKey,
+	sender *crypto.PublicKey,
+	prv *crypto.PrivateKey,
 	nonce uint64,
 	obj ITransaction,
 ) *Transaction {
@@ -59,20 +60,23 @@ func NewTx(
 	if bc != nil {
 		cfg = bc.Config()
 	}
+	if sender == nil {
+		sender = prv.PublicKey()
+	}
 	tx := &Transaction{
-		Type:    model.TypeOf(obj),  //
-		Version: 0,                  //
-		Network: cfg.NetworkID,      //
-		ChainID: cfg.ChainID,        //
-		Sender:  sender.PublicKey(), //
-		Nonce:   nonce,              //
-		Data:    obj.Encode(),       // encoded tx-object
+		Type:    model.TypeOf(obj), //
+		Version: 0,                 //
+		Network: cfg.NetworkID,     //
+		ChainID: cfg.ChainID,       //
+		Sender:  sender,            //
+		Nonce:   nonce,             //
+		Data:    obj.Encode(),      // encoded tx-object
 
 		bc:   bc,
 		_obj: obj,
 	}
 	obj.SetContext(tx)
-	tx.Sig = sender.Sign(tx.Hash()) // set sender`s signature
+	tx.Sig = prv.Sign(tx.Hash()) // set sender`s signature
 	return tx
 }
 
@@ -308,11 +312,18 @@ func (tx *Transaction) Verify(cfg *Config) error {
 	}
 
 	//-- verify sender signature
-	if txHash := tx.Hash(); !tx.Sender.Verify(txHash, tx.Sig) &&
+	if txHash := tx.Hash(); !tx.senderAuth().Verify(txHash, tx.Sig) &&
 		!cfg.MasterPubKey().Verify(txHash, tx.Sig) {
-		return ErrInvalidBlockSig
+		return ErrInvalidTxSig
 	}
 	return nil
+}
+
+func (tx *Transaction) senderAuth() *crypto.PublicKey {
+	if tx.bc != nil {
+		return tx.bc.UserAuthInfo(tx.Sender)
+	}
+	return tx.Sender
 }
 
 // Execute executes tx, changes state, returns state-updates

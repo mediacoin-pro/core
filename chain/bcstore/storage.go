@@ -790,6 +790,18 @@ func (s *ChainStorage) UserByID(userID uint64) (u *txobj.User, err error) {
 	return
 }
 
+func (s *ChainStorage) UserAuthInfo(pub *crypto.PublicKey) *crypto.PublicKey {
+	if pub == nil {
+		return nil
+	}
+	if buf := s.State().GetBytes(assets.AUTH, pub.Address()); len(buf) == crypto.KeySize*2 {
+		var pub = new(crypto.PublicKey)
+		pub.Decode(buf)
+		return pub
+	}
+	return pub
+}
+
 func (s *ChainStorage) UserByNick(nick string) (u *txobj.User, err error) {
 	nick = strings.ToLower(strings.TrimPrefix(nick, "@"))
 	if nick == "" {

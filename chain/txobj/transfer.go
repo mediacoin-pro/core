@@ -41,7 +41,8 @@ type TransferOutput struct {
 
 func NewTransfer(
 	bc chain.BCContext,
-	sender *crypto.PrivateKey,
+	sender *crypto.PublicKey,
+	prv *crypto.PrivateKey,
 	outs []*TransferOutput,
 	comment string,
 	nonce uint64,
@@ -56,12 +57,13 @@ func NewTransfer(
 	}
 	defer tr.initOutputsContext()
 
-	return chain.NewTx(bc, sender, nonce, tr)
+	return chain.NewTx(bc, sender, prv, nonce, tr)
 }
 
 func NewSimpleTransfer(
 	bc chain.BCContext,
-	sender *crypto.PrivateKey,
+	sender *crypto.PublicKey,
+	prv *crypto.PrivateKey,
 	asset []byte,
 	amount bignum.Int,
 	tag uint64, // sender memo
@@ -77,7 +79,7 @@ func NewSimpleTransfer(
 	if asset == nil {
 		asset = assets.Default
 	}
-	return NewTransfer(bc, sender, []*TransferOutput{{
+	return NewTransfer(bc, sender, prv, []*TransferOutput{{
 		Asset:     asset,
 		Amount:    amount,
 		Tag:       tag,

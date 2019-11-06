@@ -55,7 +55,7 @@ func NewEmission(
 	comment string,
 	vv []*EmissionOutput,
 ) *chain.Transaction {
-	return chain.NewTx(bc, emissionKey, 0, &Emission{
+	return chain.NewTx(bc, nil, emissionKey, 0, &Emission{
 		Asset:   asset,
 		Comment: comment,
 		Outs:    vv,

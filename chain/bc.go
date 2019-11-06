@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/mediacoin-pro/core/chain/state"
+	"github.com/mediacoin-pro/core/crypto"
 	"github.com/mediacoin-pro/core/crypto/patricia"
 )
 
@@ -15,6 +16,7 @@ type BCContext interface {
 	ChainTree() *patricia.Tree
 	TransactionByID(txID uint64) (*Transaction, error)
 	UsernameByID(userID uint64) (nick string, err error)
+	UserAuthInfo(*crypto.PublicKey) *crypto.PublicKey
 }
 
 // todo: StateTree() move to *State
@@ -45,6 +47,10 @@ func (bc emptyBCContext) StateTree() *patricia.Tree {
 
 func (bc emptyBCContext) ChainTree() *patricia.Tree {
 	panic(errInvalidBCContext)
+}
+
+func (bc emptyBCContext) UserAuthInfo(pub *crypto.PublicKey) *crypto.PublicKey {
+	return pub
 }
 
 func (bc emptyBCContext) TransactionByID(txID uint64) (tx *Transaction, err error) {

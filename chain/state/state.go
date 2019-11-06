@@ -55,6 +55,21 @@ func (s *State) Get(asset, addr []byte) bignum.Int {
 	return val
 }
 
+func (s *State) GetBytes(asset, addr []byte) []byte {
+	b := s.Get(asset, addr).Bytes()
+	if len(b) > 0 {
+		b = b[1:]
+	}
+	return b
+}
+
+func (s *State) SetBytes(asset, addr, value []byte) {
+	b := make([]byte, len(value)+1)
+	b[0] = 1
+	copy(b[1:], value)
+	s.Set(asset, addr, bignum.NewFromBytes(b), 0)
+}
+
 func (s *State) Values() Values {
 	return s.sets
 }

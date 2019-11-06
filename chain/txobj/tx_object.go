@@ -16,6 +16,7 @@ var (
 	ErrTxIncorrectNick    = errors.New("tx-Error: Incorrect nick")
 	ErrTxLongComment      = errors.New("tx-Error: Comment is too long")
 	ErrTxEmptyOuts        = errors.New("tx-Error: Empty outputs")
+	ErrTxEmptyParam       = errors.New("tx-Error: Empty param")
 )
 
 type Object struct {

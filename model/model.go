@@ -12,6 +12,7 @@ const (
 	TxEmission = 1
 	TxTransfer = 2
 	TxUser     = 3
+	TxUserUpd  = 4
 
 	ObjDocument = 10
 	ObjFile     = 11
