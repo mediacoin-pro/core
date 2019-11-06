@@ -57,7 +57,7 @@ func BytesToUint16(b []byte) uint16 {
 		if n == 0 {
 			return 0
 		}
-		b = append(make([]byte, 2-n), b...)
+		b = append(make([]byte, 2-n, 2), b...)
 	}
 	return uint16(b[1]) |
 		(uint16(b[0]) << 8)
@@ -68,7 +68,7 @@ func BytesToUint32(b []byte) uint32 {
 		if n == 0 {
 			return 0
 		}
-		b = append(make([]byte, 4-n), b...)
+		b = append(make([]byte, 4-n, 4), b...)
 	}
 	return uint32(b[3]) |
 		(uint32(b[2]) << 8) |
@@ -81,7 +81,7 @@ func BytesToUint64(b []byte) uint64 {
 		if n == 0 {
 			return 0
 		}
-		b = append(make([]byte, 8-n), b...)
+		b = append(make([]byte, 8-n, 8), b...)
 	}
 	return uint64(b[7]) |
 		(uint64(b[6]) << 8) |
