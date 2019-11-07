@@ -312,16 +312,32 @@ func (tx *Transaction) Verify(cfg *Config) error {
 	}
 
 	//-- verify sender signature
-	if txHash := tx.Hash(); !tx.senderAuth().Verify(txHash, tx.Sig) &&
-		!cfg.MasterPubKey().Verify(txHash, tx.Sig) {
+	if !tx.verifySig() {
 		return ErrInvalidTxSig
 	}
 	return nil
 }
 
+func (tx *Transaction) verifySig() bool {
+	hash := tx.Hash()
+	if tx.senderAuth().Verify(hash, tx.Sig) {
+		return true
+	}
+	// for genesis block can verify by masterKey
+	if tx.isGenesis() {
+		return tx.BCContext().Config().MasterPubKey().Verify(hash, tx.Sig)
+	}
+	return false
+}
+
+func (tx *Transaction) isGenesis() bool {
+	bl := tx.BCContext().LastBlockHeader()
+	return bl != nil && bl.Num == 0
+}
+
 func (tx *Transaction) senderAuth() *crypto.PublicKey {
-	if tx.bc != nil {
-		return tx.bc.UserAuthInfo(tx.Sender)
+	if bc := tx.BCContext(); bc != nil {
+		return bc.UserAuthInfo(tx.Sender)
 	}
 	return tx.Sender
 }
