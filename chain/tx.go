@@ -122,8 +122,8 @@ func (tx *Transaction) SenderAddressStr() string {
 	return crypto.EncodeAddress(tx.SenderAddress())
 }
 
-func (tx *Transaction) SenderNick() (nick string, err error) {
-	return tx.UsernameByID(tx.Sender.ID())
+func (tx *Transaction) SenderNick() string {
+	return UserNameByID(tx.SenderID())
 }
 
 // Hash returns hash of senders data
@@ -176,23 +176,6 @@ func (tx *Transaction) BCContext() BCContext {
 		return tx.bc
 	}
 	return nil
-}
-
-func (tx *Transaction) UsernameByID(userID uint64) (nick string, err error) {
-	if tx._users != nil {
-		if s, ok := tx._users[userID]; ok {
-			return s, nil
-		}
-	}
-	if tx.bc != nil {
-		if nick, err = tx.bc.UsernameByID(userID); err == nil && nick != "" {
-			if tx._users == nil {
-				tx._users = map[uint64]string{}
-			}
-			tx._users[userID] = nick
-		}
-	}
-	return
 }
 
 func (tx *Transaction) BlockNum() uint64 {
@@ -285,7 +268,8 @@ func (tx *Transaction) Timestamp() time.Time {
 	return time.Unix(0, int64(tx.blockTs)*1e3)
 }
 
-func (tx *Transaction) Verify(cfg *Config) error {
+func (tx *Transaction) Verify() error {
+	cfg := tx.BCContext().Config()
 
 	//-- verify transaction data
 	if tx.Network != cfg.NetworkID {
@@ -335,15 +319,19 @@ func (tx *Transaction) isGenesis() bool {
 	return bl != nil && bl.Num == 0
 }
 
+func (tx *Transaction) txState() *state.State {
+	return tx.BCContext().State()
+}
+
 func (tx *Transaction) senderAuth() *crypto.PublicKey {
-	if bc := tx.BCContext(); bc != nil {
-		return bc.UserAuthInfo(tx.Sender)
+	if pub := tx.txState().AuthInfo(tx.SenderAddress()); pub != nil {
+		return pub
 	}
 	return tx.Sender
 }
 
 // Execute executes tx, changes state, returns state-updates
-func (tx *Transaction) Execute(s *state.State) (updates state.Values, err error) {
+func (tx *Transaction) Execute() (updates state.Values, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("tx.Execute-panic: %v", r)
@@ -355,7 +343,7 @@ func (tx *Transaction) Execute(s *state.State) (updates state.Values, err error)
 		return
 	}
 
-	newState := s.NewSubState()
+	newState := tx.txState().NewSubState()
 
 	obj.Execute(newState)
 

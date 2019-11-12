@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/mediacoin-pro/core/chain"
-	"github.com/mediacoin-pro/core/chain/assets"
 	"github.com/mediacoin-pro/core/chain/state"
 	"github.com/mediacoin-pro/core/common/bin"
 	"github.com/mediacoin-pro/core/common/enc"
@@ -75,7 +74,7 @@ func (u *UserUpd) Verify() error {
 }
 
 func (u *UserUpd) Execute(st *state.State) {
-	st.SetBytes(assets.AUTH, u.SenderAddress(), u.Pubkey.Encode())
+	st.SetAuthInfo(u.SenderAddress(), u.Pubkey)
 }
 
 func (u *UserUpd) MarshalJSON() (data []byte, err error) {

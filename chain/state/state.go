@@ -3,7 +3,9 @@ package state
 import (
 	"errors"
 
+	"github.com/mediacoin-pro/core/chain/assets"
 	"github.com/mediacoin-pro/core/common/bignum"
+	"github.com/mediacoin-pro/core/crypto"
 )
 
 type State struct {
@@ -55,7 +57,7 @@ func (s *State) Get(asset, addr []byte) bignum.Int {
 	return val
 }
 
-func (s *State) GetBytes(asset, addr []byte) []byte {
+func (s *State) getBytes(asset, addr []byte) []byte {
 	b := s.Get(asset, addr).Bytes()
 	if len(b) > 0 {
 		b = b[1:]
@@ -63,7 +65,7 @@ func (s *State) GetBytes(asset, addr []byte) []byte {
 	return b
 }
 
-func (s *State) SetBytes(asset, addr, value []byte) {
+func (s *State) setBytes(asset, addr, value []byte) {
 	b := make([]byte, len(value)+1)
 	b[0] = 1
 	copy(b[1:], value)
@@ -113,4 +115,17 @@ func (s *State) Decrement(asset, addr []byte, delta bignum.Int, memo uint64) {
 
 func (s *State) Fail(err error) {
 	panic(err)
+}
+
+func (s *State) SetAuthInfo(addr []byte, pub *crypto.PublicKey) {
+	s.setBytes(assets.AUTH, addr, pub.Encode())
+}
+
+func (s *State) AuthInfo(addr []byte) *crypto.PublicKey {
+	if buf := s.getBytes(assets.AUTH, addr); len(buf) == crypto.KeySize*2 {
+		var pub = new(crypto.PublicKey)
+		pub.Decode(buf)
+		return pub
+	}
+	return nil
 }

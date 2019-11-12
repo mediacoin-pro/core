@@ -34,7 +34,6 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	if tx == nil {
 		return json.Marshal(nil)
 	}
-	nick, _ := tx.SenderNick()
 	return json.Marshal(&transactionJSON{
 		Type:         tx.Type,
 		TypeStr:      tx.StrType(),
@@ -44,7 +43,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		Nonce:        tx.Nonce,
 		Sender:       tx.Sender,
 		SenderAddr:   tx.SenderAddressStr(),
-		SenderNick:   nick,
+		SenderNick:   tx.SenderNick(),
 		ObjRaw:       tx.Data,
 		Obj:          tx.TxObject(),
 		TxID:         hex.Uint64(tx.ID()),

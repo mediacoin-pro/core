@@ -44,7 +44,8 @@ func GenerateNewBlockEx(
 		} else if _tx != nil {
 			continue // skip. tx has registered
 		}
-		if upd, err := tx.Execute(st); err == nil {
+		tx.bc = bc
+		if upd, err := tx.Execute(); err == nil {
 			tx.StateUpdates = upd
 			st.Apply(upd)
 			validTxs = append(validTxs, tx)

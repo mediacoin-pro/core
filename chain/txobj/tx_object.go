@@ -66,14 +66,3 @@ func (obj *Object) ChainConfig() *chain.Config {
 func (obj *Object) SetContext(tx *chain.Transaction) {
 	obj.tx = tx
 }
-
-func (obj *Object) UserNickByID(userID uint64) (nick string, err error) {
-	if obj != nil && obj.tx != nil {
-		return obj.tx.UsernameByID(userID)
-	}
-	return
-}
-
-func (obj *Object) UserNickByAddress(addr []byte) (nick string, err error) {
-	return obj.UserNickByID(crypto.AddressToUserID(addr))
-}

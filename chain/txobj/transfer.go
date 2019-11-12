@@ -189,32 +189,38 @@ func (tr *Transfer) Execute(st *state.State) {
 }
 
 func (tr *Transfer) MarshalJSON() ([]byte, error) {
-	return json.Object{
-		"outs":        tr.Outs,
-		"raw_comment": tr.Comment,
-		"comment":     string(tr.Comment), // todo: decoded comment
-	}.Bytes(), nil
+	return json.Marshal(struct {
+		Outs       []*TransferOutput `json:"outs"`        //
+		RawComment []byte            `json:"raw_comment"` //
+		Comment    string            `json:"comment"`     //
+	}{
+		Outs:       tr.Outs,
+		RawComment: tr.Comment,
+		Comment:    string(tr.Comment), // todo: decoded comment
+	})
 }
 
 func (out *TransferOutput) MarshalJSON() ([]byte, error) {
-	return json.Object{
-		"asset":       hex.Encode(out.Asset),
-		"amount":      out.Amount,
-		"tag":         hex.Encode(out.Tag),
-		"to":          crypto.EncodeAddress(out.To),
-		"to_memo":     crypto.EncodeAddress(out.To, out.ToMemo),
-		"to_chain_id": out.ToChainID,
-		"to_nick":     out.ToNick(),
-		"raw_comment": out.Comment,
-		//"comment": out.Comment, // todo: decoded comment
-	}.Bytes(), nil
-}
-
-func (out *TransferOutput) ToNick() (nick string) {
-	if out.tr != nil {
-		nick, _ = out.tr.UserNickByAddress(out.To)
-	}
-	return
+	return json.Marshal(struct {
+		Asset      string     `json:"asset"`       //
+		Amount     bignum.Int `json:"amount"`      //
+		Tag        string     `json:"tag"`         //
+		To         string     `json:"to"`          //
+		ToMemo     string     `json:"to_memo"`     //
+		ToChainID  uint64     `json:"to_chain_id"` //
+		ToNick     string     `json:"to_nick"`     //
+		RawComment []byte     `json:"raw_comment"` //
+		//Comment string  `json:"comment"` // todo: decoded comment
+	}{
+		Asset:      hex.Encode(out.Asset),
+		Amount:     out.Amount,
+		Tag:        hex.Encode(out.Tag),
+		To:         crypto.EncodeAddress(out.To),
+		ToMemo:     crypto.EncodeAddress(out.To, out.ToMemo),
+		ToChainID:  out.ToChainID,
+		ToNick:     chain.UserNameByID(crypto.AddressToUserID(out.To)),
+		RawComment: out.Comment,
+	})
 }
 
 //func (t *Transfer) DecryptData(prv *crypto.PrivateKey) {

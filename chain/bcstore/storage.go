@@ -35,6 +35,7 @@ type ChainStorage struct {
 	cacheHeaders *gosync.Cache // blockNum => *BlockHeader
 	cacheTxs     *gosync.Cache // blockNum => []*Transaction
 	cacheIdxTx   *gosync.Cache // idxKey => *Transaction
+	cacheNicks   *gosync.Cache // userID => userNick
 	middleware   []Middleware  //
 }
 
@@ -85,6 +86,7 @@ func NewChainStorage(dir string, cfg *chain.Config) (s *ChainStorage) {
 		cacheHeaders: gosync.NewCache(10000),
 		cacheTxs:     gosync.NewCache(1000),
 		cacheIdxTx:   gosync.NewCache(50000),
+		cacheNicks:   gosync.NewCache(10000),
 		Mempool:      mempool.NewStorage(),
 	}
 
@@ -108,6 +110,9 @@ func NewChainStorage(dir string, cfg *chain.Config) (s *ChainStorage) {
 	//if err := s.db.QueryValue(goldb.NewQuery(dbTabStat).Last(), &s.stat); err != nil {
 	//	panic(err)
 	//}
+
+	// set default user-name resolver
+	chain.UserNameByID = s.UsernameByID
 
 	return
 }
@@ -214,21 +219,17 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 
 				if s.Cfg.VerifyTxsLevel >= chain.VerifyTxLevel1 {
 
+					//-- set tx context
+					tx.SetBlockInfo(s.newTxContext(tr), block.Num, txIdx, block.Timestamp)
+
 					//-- verify sender signature
-					if err := tx.Verify(s.Cfg); err != nil {
+					if err := tx.Verify(); err != nil {
 						tr.Fail(err)
 					}
 
 					//-- verify transaction state
-					// make state by dbTransaction
-					st := state.NewState(s.Cfg.ChainID, func(a, addr []byte) (v bignum.Int) {
-						// get state from db
-						tr.QueryValue(goldb.NewQuery(dbIdxAssetAddr, a, addr).Last(), &v)
-						return
-					})
-
 					// execute transaction
-					stateUpdates, err := tx.Execute(st)
+					stateUpdates, err := tx.Execute()
 					if err != nil {
 						tr.Fail(err)
 					}
@@ -763,10 +764,13 @@ func (s *ChainStorage) AddressByUserID(userID uint64) (addr []byte, err error) {
 	return u.Address(), nil
 }
 
-func (s *ChainStorage) UsernameByID(userID uint64) (nick string, err error) {
-	u, err := s.UserByID(userID)
-	if u != nil {
+func (s *ChainStorage) UsernameByID(userID uint64) (nick string) {
+	if s, ok := s.cacheNicks.Get(userID).(string); ok {
+		return s
+	}
+	if u, _ := s.UserByID(userID); u != nil {
 		nick = u.Nick
+		s.cacheNicks.Set(userID, nick)
 	}
 	return
 }
@@ -794,21 +798,10 @@ func (s *ChainStorage) UserAuthInfo(pub *crypto.PublicKey) *crypto.PublicKey {
 	if pub == nil {
 		return nil
 	}
-	if buf := s.State().GetBytes(assets.AUTH, pub.Address()); len(buf) == crypto.KeySize*2 {
-		var pub = new(crypto.PublicKey)
-		pub.Decode(buf)
-		return pub
+	if p := s.State().AuthInfo(pub.Address()); p != nil {
+		return p
 	}
 	return pub
-}
-
-func (s *ChainStorage) AuthInfoByAddr(addr []byte) *crypto.PublicKey {
-	if buf := s.State().GetBytes(assets.AUTH, addr); len(buf) == crypto.KeySize*2 {
-		var pub = new(crypto.PublicKey)
-		pub.Decode(buf)
-		return pub
-	}
-	return nil
 }
 
 func (s *ChainStorage) UserByNick(nick string) (u *txobj.User, err error) {
@@ -841,6 +834,8 @@ func (s *ChainStorage) UserByAddress(addr []byte) (*txobj.User, error) {
 
 // UserInfoByStr returns user-info by nickname "@nick" or by address "MDCxxxxxxxxxxxxxx"
 func (s *ChainStorage) UserByStr(usernameOrAddr string) (u *txobj.User, err error) {
+	usernameOrAddr = strings.TrimSpace(usernameOrAddr)
+
 	switch {
 	case usernameOrAddr == "":
 		return
@@ -854,6 +849,9 @@ func (s *ChainStorage) UserByStr(usernameOrAddr string) (u *txobj.User, err erro
 			return nil, err
 		}
 		return s.UserByID(userID)
+
+	case len(usernameOrAddr) < 34: // is not address! maybe nickname
+		return s.UserByNick("@" + usernameOrAddr)
 
 	default:
 		addr, _, err := crypto.DecodeAddress(usernameOrAddr)
