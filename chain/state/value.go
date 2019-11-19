@@ -32,6 +32,10 @@ func (v *Value) Equal(b *Value) bool {
 		v.Memo == b.Memo
 }
 
+func (v *Value) IsMDC() bool {
+	return assets.IsMDC(v.Asset)
+}
+
 func (v *Value) StateKey() []byte {
 	b := make([]byte, 0, 26)
 	b = append(b, v.Address[:]...)
@@ -50,19 +54,25 @@ func (v *Value) Hash() []byte {
 }
 
 func (v *Value) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
+	var j = struct {
 		ChainID uint64     `json:"chain"`
 		Asset   string     `json:"asset"`
 		Address string     `json:"address"`
+		Raw     hex.Bytes  `json:"data"`
 		Balance bignum.Int `json:"balance"`
 		Memo    hex.Uint64 `json:"memo"`
 	}{
 		ChainID: v.ChainID,
 		Asset:   assets.Encode(v.Asset),
 		Address: crypto.EncodeAddress(v.Address),
+		Raw:     v.Balance.Bytes(),
 		Balance: v.Balance,
 		Memo:    hex.Uint64(v.Memo),
-	})
+	}
+	if len(j.Raw) >= 64 {
+		j.Balance = bignum.NewInt(0)
+	}
+	return json.Marshal(j)
 }
 
 func (v *Value) Encode() []byte {
