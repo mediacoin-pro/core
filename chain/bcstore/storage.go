@@ -197,6 +197,7 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 	// open db transaction
 	err := s.db.Exec(func(tr *goldb.Transaction) {
 
+		txCtx := chain.NewSubContext(s)
 		stateTree := patricia.NewSubTree(tr, goldb.Key(dbTabStateTree))
 		chainTree := patricia.NewSubTree(tr, goldb.Key(dbTabChainTree))
 
@@ -220,7 +221,7 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 				if s.Cfg.VerifyTxsLevel >= chain.VerifyTxLevel1 {
 
 					//-- set tx context
-					tx.SetBlockInfo(s.newTxContext(tr), block.Num, txIdx, block.Timestamp)
+					tx.SetBlockInfo(txCtx, block.Num, txIdx, block.Timestamp)
 
 					//-- verify sender signature
 					if err := tx.Verify(); err != nil {
@@ -238,6 +239,7 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 					if !tx.StateUpdates.Equal(stateUpdates) {
 						tr.Fail(errIncorrectTxState)
 					}
+					txCtx.State().Apply(stateUpdates)
 				}
 
 				stat.Txs++

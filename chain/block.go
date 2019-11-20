@@ -34,7 +34,7 @@ func GenerateNewBlockEx(
 	nonce uint64,
 ) (block *Block, err error) {
 
-	st := bc.State()
+	txCtx := NewSubContext(bc)
 	validTxs := txs[:0]
 	for _, tx := range txs {
 		if tx == nil {
@@ -44,10 +44,10 @@ func GenerateNewBlockEx(
 		} else if _tx != nil {
 			continue // skip. tx has registered
 		}
-		tx.bc = bc
+		tx.bc = txCtx // set context
 		if upd, err := tx.Execute(); err == nil {
 			tx.StateUpdates = upd
-			st.Apply(upd)
+			txCtx.State().Apply(upd)
 			validTxs = append(validTxs, tx)
 		}
 	}

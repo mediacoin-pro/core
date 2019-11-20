@@ -19,3 +19,19 @@ type BCContext interface {
 var UserNameByID = func(userID uint64) (nick string) {
 	return fmt.Sprintf("0x%016x", userID)
 }
+
+type txContext struct {
+	BCContext
+	state *state.State
+}
+
+func (c *txContext) State() *state.State {
+	return c.state
+}
+
+func NewSubContext(bc BCContext) BCContext {
+	return &txContext{
+		BCContext: bc,
+		state:     bc.State().NewSubState(),
+	}
+}
