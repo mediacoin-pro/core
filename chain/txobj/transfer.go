@@ -200,6 +200,10 @@ func (tr *Transfer) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func (out *TransferOutput) ToNick() string {
+	return chain.UserNameByID(crypto.AddressToUserID(out.To))
+}
+
 func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Asset      string     `json:"asset"`       //
@@ -218,7 +222,7 @@ func (out *TransferOutput) MarshalJSON() ([]byte, error) {
 		To:         crypto.EncodeAddress(out.To),
 		ToMemo:     crypto.EncodeAddress(out.To, out.ToMemo),
 		ToChainID:  out.ToChainID,
-		ToNick:     chain.UserNameByID(crypto.AddressToUserID(out.To)),
+		ToNick:     out.ToNick(),
 		RawComment: out.Comment,
 	})
 }
