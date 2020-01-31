@@ -201,6 +201,9 @@ func (tr *Transfer) MarshalJSON() ([]byte, error) {
 }
 
 func (out *TransferOutput) ToNick() string {
+	if out == nil || len(out.To) == 0 {
+		return ""
+	}
 	return chain.UserNameByID(crypto.AddressToUserID(out.To))
 }
 
