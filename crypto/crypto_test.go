@@ -44,6 +44,17 @@ func TestNewPrivateKeyBySecret(t *testing.T) {
 	assert.NotEqual(t, pub1.Bytes(), pub3.Bytes())
 }
 
+func TestNewPrivateKeyBySecret_for_prize1000000(t *testing.T) {
+	const (
+		login    = "prize1000000"
+		password = "µDс0"
+	)
+
+	prv := NewPrivateKeyBySecret(login + "::" + password)
+
+	assert.Equal(t, "MDCBMnTS1Ts9WbXcMuFbXSEkb2DtPBWCHVz", prv.PublicKey().StrAddress())
+}
+
 func TestPrivateKey_D(t *testing.T) {
 	org := NewPrivateKey()
 	buf := org.Bytes()
