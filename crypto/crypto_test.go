@@ -9,7 +9,7 @@ import (
 
 //var allTestMode = len(os.Args) == 2 && os.Args[1] == "-test.v=true"
 
-func TestGeneratePrivateKey(t *testing.T) {
+func TestNewPrivateKey(t *testing.T) {
 
 	prv1 := NewPrivateKey()
 	prv2 := NewPrivateKey()
@@ -20,7 +20,7 @@ func TestGeneratePrivateKey(t *testing.T) {
 	assert.Equal(t, PublicKeySize, len(pub1.Bytes()))
 }
 
-func TestGeneratePrivateKeyByPassword(t *testing.T) {
+func TestNewPrivateKeyBySecret(t *testing.T) {
 	//if allTestMode { // skip test
 	//	return
 	//}
