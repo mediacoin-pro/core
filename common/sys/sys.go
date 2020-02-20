@@ -10,6 +10,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/mediacoin-pro/core/common/bin"
+	"github.com/mediacoin-pro/core/common/xlog"
 )
 
 func TempDir() string {
@@ -21,6 +25,15 @@ func TempFilename(ext string) string {
 		ext = "." + ext
 	}
 	return fmt.Sprintf("%s/tmp%016x%s", TempDir(), rand.Uint64(), ext)
+}
+
+func ExistedPath(path ...string) string {
+	for _, s := range path {
+		if FileExists(s) {
+			return s
+		}
+	}
+	return ""
 }
 
 func FileExists(path string) bool {
@@ -45,6 +58,37 @@ func SetFileExt(path, newExt string) string {
 		path = path[:len(path)-n]
 	}
 	return path + "." + newExt
+}
+
+func FileVersion(path string) uint64 {
+	st, _ := os.Stat(path)
+	return bin.FastHash64(path, st.ModTime().UnixNano(), st.IsDir(), st.Size(), uint64(st.Mode()))
+}
+
+func WatchFile(path string, onFileUpdated func()) {
+	var ver = FileVersion(path)
+	safeCall(onFileUpdated)
+	go func() {
+		for {
+			if v := FileVersion(path); v != ver {
+				ver = v
+				safeCall(onFileUpdated)
+			} else {
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}()
+}
+
+func safeCall(fn func()) {
+	defer func() { recover() }()
+	defer func() {
+		if r := recover(); r != nil {
+			xlog.Fatal.Printf("FATAL-ERR: %v", r)
+		}
+	}()
+
+	fn()
 }
 
 func FileSize(path string) int64 {
@@ -111,7 +155,7 @@ func UserHomeDir() (dir string) {
 		"CommonProgramFiles",     // C:\Program Files\Common Files
 		"CSIDL_LOCAL_APPDATA",    //
 		"CSIDL_PROGRAM_FILES",    // C:\Program Files
-		"CD", // The current directory
+		"CD",                     // The current directory
 	} {
 		if dir = os.Getenv(name); dir != "" {
 			if dir = NormPath(dir); dir != "" && FileExists(dir) && isAvailableOnWrite(dir) { // dir exists
@@ -127,6 +171,17 @@ func isAvailableOnWrite(dir string) bool {
 	defer os.Remove(testDir)
 
 	return FileExists(testDir) || os.Mkdir(testDir, 0755) == nil && FileExists(testDir)
+}
+
+func DirCountFiles(dirname string) (n int) {
+	f, err := os.Open(dirname)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	names, _ := f.Readdirnames(-1)
+	return len(names)
 }
 
 func DirSize(dirname string) (n int64) {
@@ -188,4 +243,25 @@ func RunShellCommand(shellScript string, stdOut, stdErr io.Writer) (err error) {
 	}
 	cmd.Stderr = stdErr
 	return cmd.Run()
+}
+
+func WaitingFor(fn func() bool, timeout time.Duration) (ok bool) {
+	if fn() {
+		return true
+	}
+	if timeout > 0 {
+		deadline := UnixNano() + int64(timeout)
+		for ; UnixNano() < deadline; Sleep(time.Millisecond) {
+			if fn() {
+				return true
+			}
+		}
+	} else {
+		for ; ; Sleep(time.Millisecond) {
+			if fn() {
+				return true
+			}
+		}
+	}
+	return false
 }
