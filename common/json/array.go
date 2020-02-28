@@ -21,9 +21,8 @@ func (arr Array) IsNull() bool {
 	return arr == nil
 }
 
-func (arr Array) Append(v interface{}) Array {
-	arr = append(arr, v)
-	return arr
+func (arr *Array) Append(v interface{}) {
+	*arr = append(*arr, v)
 }
 
 func (arr Array) Eq(i int) (v Value) {
