@@ -1,6 +1,9 @@
 package json
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sort"
+)
 
 type Object map[string]interface{}
 
@@ -36,6 +39,11 @@ func (obj Object) Bytes() []byte {
 func (obj Object) IndentString() string {
 	b, _ := json.MarshalIndent(obj, "", "  ")
 	return string(b)
+}
+
+func (obj Object) Set(name string, v interface{}) Object {
+	obj[name] = v
+	return obj
 }
 
 func (obj Object) Get(name string) (v Value) {
@@ -88,6 +96,16 @@ func (obj Object) GetNoNil(name ...string) (v Value) {
 	return
 }
 
+func (obj Object) Keys() (keys []string) {
+	if obj != nil {
+		for key := range obj {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+	}
+	return
+}
+
 func (obj Object) Unmarshal(v interface{}) error {
 	return json.Unmarshal(obj.Bytes(), v)
 }
@@ -98,11 +116,6 @@ func (obj Object) Encode() []byte {
 
 func (obj *Object) Decode(data []byte) (err error) {
 	return json.Unmarshal(data, &obj)
-}
-
-func (obj Object) Set(name string, v interface{}) Object {
-	obj[name] = v
-	return obj
 }
 
 func ValueToObject(v interface{}) (obj Object, err error) {
