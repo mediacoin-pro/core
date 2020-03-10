@@ -68,17 +68,29 @@ func (v Value) IsArray() bool {
 }
 
 func (v Value) Array() Array {
-	if a, ok := v.val.([]interface{}); ok {
-		return a
+	switch val := v.val.(type) {
+	case []interface{}:
+		return val
+
+	case Array:
+		return val
+
+	default:
+		return nil
 	}
-	return nil
 }
 
 func (v Value) Object() Object {
-	if a, ok := v.val.(map[string]interface{}); ok {
-		return a
+	switch val := v.val.(type) {
+	case map[string]interface{}:
+		return val
+
+	case Object:
+		return val
+
+	default:
+		return nil
 	}
-	return nil
 }
 
 func (v Value) Bool() bool {
@@ -125,6 +137,9 @@ func (v Value) Uint64() uint64 {
 }
 
 func (v Value) Int64() (num int64) {
+	if v.val == nil {
+		return
+	}
 	switch v := v.val.(type) {
 	case int:
 		num = int64(v)
