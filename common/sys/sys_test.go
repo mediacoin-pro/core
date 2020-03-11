@@ -61,7 +61,7 @@ func makeTestSymlinkFile(size int64) (org, sym string) {
 }
 
 func TestCopyFile(t *testing.T) {
-	const fileSize = 1234
+	const fileSize = 1e6
 	name1 := TempFilename("test-copy-file-test-1")
 	name2 := TempFilename("test-copy-file-test-2")
 	defer os.Remove(name1)
@@ -80,7 +80,7 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestMoveFile(t *testing.T) {
-	const fileSize = 1234
+	const fileSize = 1e6
 	name1 := TempFilename("test-copy-file-test-1")
 	name2 := TempFilename("test-copy-file-test-2")
 	defer os.Remove(name1)

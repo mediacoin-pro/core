@@ -21,24 +21,28 @@ func (*emptyStream) Close() error {
 }
 
 func NewProgressWriter(w io.Writer, progress func(written int64)) io.Writer {
-	return &progressStream{w, progress}
+	return &progressStream{w, 0, progress}
 }
 
 type progressStream struct {
 	w  io.Writer
+	n  int64
 	fn func(written int64)
 }
 
 func (s *progressStream) Write(buf []byte) (n int, err error) {
 	n, err = s.w.Write(buf)
-	s.fn(int64(n))
+	s.n += int64(n)
+	s.fn(s.n)
 	return
 }
 
-func (s *progressStream) Close(buf []byte) (n int, err error) {
-	n, err = s.w.Write(buf)
-	s.fn(int64(n))
-	return
+func (s *progressStream) Close() error {
+	s.fn(s.n)
+	if c, _ := s.w.(io.Closer); c != nil {
+		return c.Close()
+	}
+	return nil
 }
 
 func Copy(w io.Writer, r io.Reader, progress func(written int64)) (int64, error) {
