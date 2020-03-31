@@ -1,6 +1,8 @@
 package txobj
 
 import (
+	"bytes"
+
 	"github.com/mediacoin-pro/core/chain"
 	"github.com/mediacoin-pro/core/chain/assets"
 	"github.com/mediacoin-pro/core/chain/state"
@@ -22,6 +24,8 @@ type Transfer struct {
 }
 
 var _ = model.RegisterModel(model.TxTransfer, &Transfer{})
+
+var subscriptionRewardAddress = crypto.MustParseAddress("MDCB4B4kLg8f2W31a27QrbPLrc7c8nPMkyQ")
 
 type TransferOutput struct {
 	Asset     []byte     //
@@ -112,6 +116,14 @@ func (tr *Transfer) Decode(data []byte) error {
 		&tr.Comment,
 		&tr.Outs,
 	)
+}
+
+func (tr *Transfer) IsDonation() bool {
+	return bytes.HasPrefix(tr.Comment, []byte("Donation for"))
+}
+
+func (tr *Transfer) IsSubscriptionRewards() bool {
+	return bytes.Equal(tr.SenderAddress(), subscriptionRewardAddress)
 }
 
 func (tr *Transfer) initOutputsContext() {
