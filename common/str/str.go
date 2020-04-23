@@ -14,6 +14,10 @@ func NoEmpty(ss ...string) string {
 	return ""
 }
 
+func In(str string, ss ...string) bool {
+	return IndexOf(ss, str) >= 0
+}
+
 func InSlice(ss []string, str string) bool {
 	return IndexOf(ss, str) >= 0
 }
