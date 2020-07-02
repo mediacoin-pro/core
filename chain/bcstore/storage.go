@@ -10,6 +10,7 @@ import (
 
 	"github.com/mediacoin-pro/core/chain"
 	"github.com/mediacoin-pro/core/chain/assets"
+	"github.com/mediacoin-pro/core/chain/bcclient"
 	"github.com/mediacoin-pro/core/chain/mempool"
 	"github.com/mediacoin-pro/core/chain/state"
 	"github.com/mediacoin-pro/core/chain/txobj"
@@ -39,7 +40,9 @@ type ChainStorage struct {
 	middleware   []Middleware  //
 }
 
-type Middleware func(*goldb.Transaction, *chain.Block)
+var _ bcclient.Client = new(ChainStorage)
+
+type Middleware func(dbTx *goldb.Transaction, block *chain.Block)
 
 const (
 	// tables
@@ -141,6 +144,14 @@ func (s *ChainStorage) VacuumDB() error {
 func (s *ChainStorage) AddMiddleware(fn Middleware) {
 	s.middleware = append(s.middleware, fn)
 }
+
+func (s *ChainStorage) DB() *goldb.Storage {
+	return s.db
+}
+
+//func (s *ChainStorage) DBFetch(q *goldb.Query, fn func(goldb.Record) error) error {
+//	return s.db.Fetch(q, fn)
+//}
 
 func (s *ChainStorage) ChainTree() *patricia.Tree {
 	return patricia.NewTree(patricia.NewMemoryStorage(patricia.NewSubStorage(s.db, goldb.Key(dbTabChainTree))))
@@ -523,6 +534,10 @@ func (s *ChainStorage) addBlockInfoToTx(tx *chain.Transaction, blockNum uint64, 
 		tx.SetBlockInfo(s, blockNum, txIdx, block.Timestamp)
 	}
 	return
+}
+
+func (s *ChainStorage) PublishTx(tx *chain.Transaction) (err error) {
+	return s.Mempool.Put(tx)
 }
 
 func (s *ChainStorage) GetTransaction(blockNum uint64, txIdx int) (tx *chain.Transaction, err error) {
