@@ -70,14 +70,14 @@ func TestStorage_Vacuum(t *testing.T) {
 	defer store.Drop()
 
 	//------- insert test data ------------
-	const countRows = 3000
+	const countRows = 500
 	for i := 0; i < countRows; i++ {
 		store.Exec(func(tr *Transaction) {
-			tr.PutVar(Key(TestTable, "LongLongLongKey%d", i*15551%countRows), "String value")
+			tr.PutVar(Key(TestTable, "LongLongLongKey-%d", i*15551%countRows), "String value")
 		})
 	}
 	sizeBefore := store.Size()
-	t.Log("\tStorage.Vacuum: start.  Storage-size: ", sizeBefore)
+	t.Logf("\tStorage.Vacuum: start.  Storage-size: %7d", sizeBefore)
 
 	// run several read routines
 	var wg sync.WaitGroup
@@ -88,7 +88,7 @@ func TestStorage_Vacuum(t *testing.T) {
 			defer wg.Done()
 			for i := 0; !fFinishVacuum; i++ {
 				i %= countRows
-				v, _ := store.GetStr(Key(TestTable, "LongLongLongKey%d", i*15551%countRows))
+				v, _ := store.GetStr(Key(TestTable, "LongLongLongKey-%d", i*15551%countRows))
 				if !assert.Equal(t, "String value", v) {
 					break
 				}
@@ -100,14 +100,15 @@ func TestStorage_Vacuum(t *testing.T) {
 	err := store.Vacuum()
 
 	sizeAfter := store.Size()
-	t.Log("\tStorage.Vacuum: finish. Storage-size: ", sizeAfter)
+	kCompress := float64(sizeAfter) / float64(sizeBefore)
+	t.Logf("\tStorage.Vacuum: finish. Storage-size: %7d	compress:%.2f%%", sizeAfter, (kCompress-1)*100)
 
 	fFinishVacuum = true
 	wg.Wait()
 
 	//----- asserts ------------
 	assert.NoError(t, err)
-	assert.True(t, sizeAfter < sizeBefore/50)
+	assert.True(t, kCompress < 0.05)
 	assert.True(t, fileExists(store.dir))
 	assert.False(t, fileExists(store.dir+".reindex"))
 	assert.False(t, fileExists(store.dir+".old"))
@@ -118,7 +119,7 @@ func TestStorage_Vacuum_Parallel(t *testing.T) {
 	defer store.Drop()
 
 	// insert test data
-	const countRows = 1000
+	const countRows = 200
 	for i := 0; i < countRows; i++ {
 		store.Exec(func(tr *Transaction) {
 			tr.PutVar(Key(TestTable, i), "First value")
