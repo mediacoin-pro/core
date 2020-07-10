@@ -22,7 +22,7 @@ func (t TxInfo) Encode() []byte {
 	}
 
 	// caching tx-users info (see: Transaction.UsernameByID())
-	t.Transaction.MarshalJSON()
+	t.Transaction.SenderNick()
 
 	return bin.Encode(
 		t.Transaction,
