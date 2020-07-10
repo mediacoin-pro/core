@@ -25,11 +25,11 @@ type Storage struct {
 	cntWaitingTrans int64
 
 	// batch params
-	batchMx   sync.Mutex
-	batchSync bool
-	batchCl   chan struct{}
-	batchErr  *error
-	batchTxs  []func(*Transaction)
+	batchMx  sync.Mutex
+	batchEx  chan struct{}
+	batchCl  chan struct{}
+	batchErr *error
+	batchTxs []func(*Transaction)
 }
 
 func NewStorage(dir string, op *opt.Options) (s *Storage) {
@@ -217,7 +217,7 @@ func (s *Storage) copyDataToNewDB(dir string) (err error) {
 		if err = iterator.Error(); err != nil {
 			return
 		}
-		if i%10000 == 0 {
+		if i%50000 == 0 {
 			if tr != nil {
 				if err = tr.Commit(); err != nil {
 					return

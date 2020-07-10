@@ -1,27 +1,23 @@
 package goldb
 
 import (
-	"time"
-
 	"github.com/mediacoin-pro/core/common/xlog"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func (s *Storage) ExecBatch(fn func(tx *Transaction)) error {
-	var cl chan struct{}
-	var pErr *error
-
 	// put tx to batch
 	s.batchMx.Lock()
-	if !s.batchSync {
-		s.batchSync = true
+	if s.batchEx == nil {
+		s.batchEx = make(chan struct{})
 		go s.startBatchSync()
 	}
-	if cl, pErr = s.batchCl, s.batchErr; cl == nil { // new batch
-		cl, pErr = make(chan struct{}), new(error)
-		s.batchCl, s.batchErr = cl, pErr
+	if s.batchCl == nil { // new batch
+		s.batchCl, s.batchErr = make(chan struct{}), new(error)
 	}
+	cl, pErr := s.batchCl, s.batchErr
 	s.batchTxs = append(s.batchTxs, fn)
+	close(s.batchEx)
 	s.batchMx.Unlock()
 	//---
 
@@ -31,17 +27,14 @@ func (s *Storage) ExecBatch(fn func(tx *Transaction)) error {
 
 func (s *Storage) startBatchSync() {
 	for {
+		<-s.batchEx // waiting for txs
+
 		// pop all txs
 		s.batchMx.Lock()
 		txs, cl, pErr := s.batchTxs, s.batchCl, s.batchErr
-		s.batchTxs, s.batchCl, s.batchErr = nil, nil, nil
+		s.batchEx, s.batchTxs, s.batchCl, s.batchErr = make(chan struct{}), nil, nil, nil
 		s.batchMx.Unlock()
-		//
-		if len(txs) == 0 {
-			time.Sleep(5 * time.Millisecond)
-			continue
-		}
-		t0 := time.Now()
+
 		// commit
 		err := s.Exec(func(t *Transaction) {
 			for _, fn := range txs {
@@ -54,12 +47,8 @@ func (s *Storage) startBatchSync() {
 		if err == leveldb.ErrClosed {
 			break
 		}
-
-		if xlog.TraceIsOn() {
-			xlog.Trace.Printf("-- goldb.ExecBatch() txs:%3d,  avgT:%6.3fs", len(txs), time.Since(t0).Seconds())
-		}
 		if err != nil {
-			xlog.Error.Printf("-- goldb.ExecBatch() txs:%3d,  avgT:%6.3fs ERR:%v", len(txs), time.Since(t0).Seconds(), err)
+			xlog.Error.Printf("-- goldb.ExecBatch() txs:%3d ERR:%v", len(txs), err)
 		}
 	}
 }
