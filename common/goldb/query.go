@@ -13,6 +13,7 @@ type Query struct {
 	desc     bool
 	limit    int64
 	fnFilter func(Record) bool
+	async    int
 
 	// results
 	NumRows uint64
@@ -23,6 +24,11 @@ func NewQuery(idxID Entity, filterVal ...interface{}) *Query {
 		filter: Key(idxID, filterVal...),
 		limit:  -1,
 	}
+}
+
+func (q *Query) Async(workers int) *Query {
+	q.async = workers
+	return q
 }
 
 func (q *Query) AddFilter(filterVal ...interface{}) *Query {

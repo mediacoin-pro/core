@@ -14,7 +14,7 @@ type DumpOptions struct {
 
 func (s *Storage) Dump(filepath string, options *DumpOptions) (err error) {
 	op := DumpOptions{
-		CompressionLevel: flate.DefaultCompression,
+		CompressionLevel: flate.BestSpeed,
 	}
 	if options != nil {
 		op = *options

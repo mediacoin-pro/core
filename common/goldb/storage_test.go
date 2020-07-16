@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,31 @@ func TestContext_Fetch(t *testing.T) {
 func fileExists(path string) bool {
 	st, _ := os.Stat(path)
 	return st != nil
+}
+
+func TestStorage_asyncQuery(t *testing.T) {
+	store := newTestStorage()
+	defer store.Drop()
+
+	const countRows = 500
+
+	//------- insert test data ------------
+	store.Exec(func(tr *Transaction) {
+		for i := 0; i < countRows; i++ {
+			tr.PutVar(Key(TestTable, "Key-%d", i), "Value")
+		}
+	})
+
+	//----- async fetch all records
+	q := NewQuery(TestTable).Async(10)
+	var n int64
+	err := store.Fetch(q, func(rec Record) error {
+		atomic.AddInt64(&n, 1)
+		return nil
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(countRows), n)
 }
 
 func TestStorage_Vacuum(t *testing.T) {

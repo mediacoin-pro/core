@@ -3,6 +3,7 @@ package goldb
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -175,6 +176,39 @@ func (c *context) LastRowID(tableID Entity) (rowID uint64, err error) {
 var tail1024 = bytes.Repeat([]byte{255}, 1024)
 
 func (c *context) execute(q *Query, fnRow func(rec Record) error) (err error) {
+	if q.async <= 1 {
+		return c.syncExecute(q, fnRow)
+	}
+	var wg sync.WaitGroup
+	var ch = make(chan Record)
+	for i := 0; i < q.async; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil && err == nil {
+					err = fmt.Errorf("%v", r)
+					for range ch {
+					}
+				}
+			}()
+			for rec := range ch {
+				if e := fnRow(rec); e != nil {
+					err = e
+				}
+			}
+		}()
+	}
+	c.syncExecute(q, func(rec Record) error {
+		ch <- rec
+		return err
+	})
+	close(ch)
+	wg.Wait()
+	return
+}
+
+func (c *context) syncExecute(q *Query, fnRow func(rec Record) error) (err error) {
 	q.NumRows = 0
 	pfx := q.filter
 	pfxLen := len(pfx)
