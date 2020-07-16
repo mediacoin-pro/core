@@ -8,8 +8,8 @@ import (
 	"github.com/mediacoin-pro/core/common/bignum"
 	"github.com/mediacoin-pro/core/common/bin"
 	"github.com/mediacoin-pro/core/common/enc"
+	"github.com/mediacoin-pro/core/common/rnd"
 	"github.com/mediacoin-pro/core/crypto"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,6 +60,23 @@ func TestState_Get_(t *testing.T) {
 	assert.True(t, a.Values().Equal(b.Values()))
 	assert.True(t, b.Values().Equal(a.Values()))
 	assert.False(t, c.Values().Equal(a.Values()))
+}
+
+func TestState_GetBytes(t *testing.T) {
+
+	a := NewState(0, nil)
+	data1 := rnd.Bytes(64)
+	data2 := rnd.Bytes(64)
+	data3 := rnd.Bytes(64)
+	data3[0], data3[1] = 0, 0
+
+	a.setBytes(coin, addr0, data1)
+	a.setBytes(coin, addr0, data2)
+	a.setBytes(coin, addr0, data3)
+
+	assert.Equal(t, data3, a.getBytes(coin, addr0))
+	assert.Equal(t, 64, len(a.getBytes(coin, addr0)))
+	assert.Equal(t, 0, len(a.getBytes(coin, addrA)))
 }
 
 func TestValues_Equal(t *testing.T) {
