@@ -76,10 +76,10 @@ func NewSimpleTransfer(
 	comment string,
 	nonce uint64,
 ) *chain.Transaction {
-	var toChainID = chain.DefaultConfig.ChainID
-	if bc != nil {
-		toChainID = bc.Config().ChainID
+	if bc == nil {
+		bc = chain.DefaultBCContext
 	}
+	toChainID := bc.Config().ChainID
 	if asset == nil {
 		asset = assets.Default
 	}
