@@ -35,3 +35,31 @@ func NewSubContext(bc BCContext) BCContext {
 		state:     bc.State().NewSubState(),
 	}
 }
+
+var DefaultBCContext BCContext = &nilBCCtx{}
+
+type nilBCCtx struct{}
+
+func (bc *nilBCCtx) Config() *Config {
+	return DefaultConfig
+}
+
+func (bc *nilBCCtx) LastBlockHeader() *BlockHeader {
+	return nil
+}
+
+func (bc *nilBCCtx) StateTree() *patricia.Tree {
+	panic("errInvalidBCContext")
+}
+
+func (bc *nilBCCtx) ChainTree() *patricia.Tree {
+	panic("errInvalidBCContext")
+}
+
+func (bc *nilBCCtx) TransactionByID(txID uint64) (*Transaction, error) {
+	panic("errInvalidBCContext")
+}
+
+func (bc *nilBCCtx) State() *state.State {
+	return state.NewState(DefaultConfig.ChainID, nil)
+}
