@@ -57,5 +57,5 @@ func TestShuffle(t *testing.T) {
 
 	Shuffle(slice, 0)
 
-	assert.Equal(t, "jskliprmcdutzhxyawegonbfqv", string(slice))
+	assert.Equal(t, "sobhlicfmetpjvyuxawqnrgzdk", string(slice))
 }
