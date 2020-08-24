@@ -61,6 +61,10 @@ func (u *User) Address() []byte {
 	return u.SenderAddress()
 }
 
+func (u *User) AddressStr() string {
+	return u.SenderAddressStr()
+}
+
 //func (u *User) NewDoc(sCID string, data json.Object) *dsobj.DocumentObject {
 //	cid, _ := dsobj.ParseChannelID(sCID)
 //	return dsobj.NewDocumentObject(u.UserID(), cid, data)
