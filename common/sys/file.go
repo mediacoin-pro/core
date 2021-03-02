@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func MoveFile(old, new string, progress func(copied int64)) (err error) {
+func MoveFile(old, new string, progress func(copied int64) error) (err error) {
 	if err = os.Rename(old, new); err == nil { // OK
 		if progress != nil {
 			progress(FileSize(new))
@@ -18,8 +18,8 @@ func MoveFile(old, new string, progress func(copied int64)) (err error) {
 	return
 }
 
-func CopyFile(old, new string, progress func(copied int64)) (err error) {
-	f1, err := os.Open(old)
+func CopyFile(src, new string, progress func(copied int64) error) (err error) {
+	f1, err := os.Open(src)
 	if err != nil {
 		return
 	}
