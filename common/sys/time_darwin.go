@@ -62,6 +62,10 @@ func Sleep(dur time.Duration) {
 	if dur <= 0 {
 		return
 	}
+	if dur > 5*timeLag {
+		time.Sleep(dur)
+		return
+	}
 
 	c := make(chan struct{})
 	deadline := UnixNano() + int64(dur)
