@@ -32,6 +32,10 @@ func (arr Array) Eq(i int) (v Value) {
 	return
 }
 
+func (arr Array) EqObj(i int) Object {
+	return arr.Eq(i).Object()
+}
+
 func (arr Array) ForEach(fn func(Value)) {
 	for i := range arr {
 		fn(arr.Eq(i))
