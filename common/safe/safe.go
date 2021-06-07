@@ -3,6 +3,7 @@ package safe
 import (
 	"fmt"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/mediacoin-pro/core/common/sys"
@@ -16,6 +17,23 @@ func Go(fn func()) {
 func Exec(fn func()) {
 	defer Recover()
 	fn()
+}
+
+func Func(fn func()) func() {
+	return func() {
+		defer Recover()
+		fn()
+	}
+}
+
+func OnceFunc(fn func()) func() {
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			defer Recover()
+			fn()
+		})
+	}
 }
 
 func Loop(duration time.Duration, fn func()) {
