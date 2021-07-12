@@ -89,3 +89,16 @@ func BinarySizeToString(size int64) string {
 	}
 	return pfx + v + sizeSfxs[sfx]
 }
+
+func IP2Uint(ip string) (a uint32) {
+	if ss := strings.SplitN(ip, ".", 4); len(ss) == 4 {
+		for i, v := range ss {
+			if n, err := strconv.ParseUint(v, 10, 32); err == nil && n <= 255 {
+				a |= uint32(n) << (24 - i*8)
+			} else {
+				return 0
+			}
+		}
+	}
+	return
+}

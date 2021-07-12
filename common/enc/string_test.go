@@ -19,3 +19,15 @@ func TestDataSizeToString(t *testing.T) {
 	assert.Equal(t, "20.9 MB", BinarySizeToString(20*1024*1024+1000000))
 	assert.Equal(t, "-20.9 MB", BinarySizeToString(-(20*1024*1024 + 1000000)))
 }
+
+func TestIP2Uint(t *testing.T) {
+	assert.Equal(t, uint32(0x7f000001), IP2Uint("127.0.0.1"))
+	assert.Equal(t, uint32(0xffffffff), IP2Uint("255.255.255.255"))
+	assert.Equal(t, uint32(0x010203ff), IP2Uint("1.2.3.255"))
+
+	assert.Equal(t, uint32(0), IP2Uint(""))
+	assert.Equal(t, uint32(0), IP2Uint("256.0.0.1"))
+	assert.Equal(t, uint32(0), IP2Uint("12.5.6.7.7"))
+	assert.Equal(t, uint32(0), IP2Uint("127,0,0,1"))
+	assert.Equal(t, uint32(0), IP2Uint("a.a.a.a"))
+}
