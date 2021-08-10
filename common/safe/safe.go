@@ -56,6 +56,15 @@ func Watch(fn func() interface{}, event func()) {
 	})
 }
 
+func WaitingFor(fn func() bool) {
+	for f := false; !f; {
+		Exec(func() {
+			f = fn()
+		})
+		sys.Sleep(time.Millisecond)
+	}
+}
+
 func Recover() {
 	defer func() { recover() }()
 	if r := recover(); r != nil {
