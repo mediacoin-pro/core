@@ -109,6 +109,12 @@ func (m *Map) Version() uint64 {
 	return m.ver
 }
 
+func (m *Map) Info() (size int, ver uint64) {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+	return len(m.vals), m.ver
+}
+
 func (m *Map) KeyValues() map[interface{}]interface{} {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
@@ -207,14 +213,12 @@ func (m *Map) Random() (key, value interface{}) {
 
 	if cnt := len(m.vals); cnt > 0 {
 		// todo: optimize it!  (add keys slice)
-		n := rand.Intn(cnt)
+		i := rand.Intn(cnt)
 		for k, v := range m.vals {
-			if n == 0 {
+			if i--; i < 0 {
 				return k, v
 			}
-			n--
 		}
-		panic(1)
 	}
 	return nil, nil
 }
