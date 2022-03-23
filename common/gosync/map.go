@@ -115,6 +115,17 @@ func (m *Map) Info() (size int, ver uint64) {
 	return len(m.vals), m.ver
 }
 
+func (m *Map) ForEach(fn func(key, value interface{})) {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+
+	if m.vals != nil {
+		for k, v := range m.vals {
+			fn(k, v)
+		}
+	}
+}
+
 func (m *Map) KeyValues() map[interface{}]interface{} {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
