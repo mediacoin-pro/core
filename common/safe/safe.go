@@ -75,14 +75,13 @@ func Recover() {
 }
 
 func RecoverError(err *error) {
+	if err == nil {
+		Recover()
+		return
+	}
 	defer func() { recover() }()
-	if r := recover(); r != nil {
-		if err != nil {
-			*err = fmt.Errorf("PANIC-ERROR: %v", r)
-		}
-		ss := debug.Stack()
-		xlog.Fatal.Print("Panic:\n", string(ss))
-		xlog.Fatal.Printf("FATAL-ERR: %v", r)
+	if r := recover(); r != nil && *err == nil {
+		*err = fmt.Errorf("PANIC-ERROR: %v", r)
 	}
 }
 
