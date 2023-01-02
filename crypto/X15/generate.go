@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/elliptic"
 	"crypto/md5"
-	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -118,18 +117,10 @@ func generateKeyByPassword(hash []byte) []byte {
 	hash = append(h256[:], hash...)
 	trace("sha2-256", hash)
 
-	// rsa generate pubkey
-	if pv, err := rsa.GenerateKey(fixedRandBuf{bytes.NewBuffer(hash)}, 128); err == nil {
-		hash = append(pv.PublicKey.N.Bytes(), hash...)
-	} else {
-		panic(err)
-	}
+	// rsa public key as hash
+	rsaPub := rsaGeneratePublicKey(bytes.NewBuffer(hash))
+	hash = append(rsaPub, hash...)
 	trace("rsa", hash)
-
-	// elliptic curve 521  // a lot of memory !!!
-	//x, y = elliptic.P521().ScalarBaseMult(hash[:521])
-	//hash = append(x.Bytes(), append(hash, y.Bytes()...)...)
-	//trace("curve-521", hash)
 
 	// aes
 	if bl, err := aes.NewCipher(h256[:32]); err == nil {
@@ -140,15 +131,4 @@ func generateKeyByPassword(hash []byte) []byte {
 	trace("aes", hash)
 
 	return hash
-}
-
-type fixedRandBuf struct {
-	buf *bytes.Buffer
-}
-
-func (r fixedRandBuf) Read(d []byte) (int, error) {
-	if len(d) == 1 { // skip
-		return 1, nil
-	}
-	return r.buf.Read(d)
 }
