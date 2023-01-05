@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-type Object map[string]interface{}
+type Object map[string]any
 
 func ParseObject(data []byte) (obj Object, err error) {
 	err = json.Unmarshal(data, &obj)
@@ -15,7 +15,7 @@ func ParseObject(data []byte) (obj Object, err error) {
 	return
 }
 
-func NewObject(v interface{}) (obj Object) {
+func NewObject(v any) (obj Object) {
 	if v == nil {
 		return
 	}
@@ -32,7 +32,10 @@ func (obj Object) String() string {
 }
 
 func (obj Object) Bytes() []byte {
-	b, _ := json.Marshal(map[string]interface{}(obj))
+	if obj == nil || len(obj) == 0 {
+		return nil
+	}
+	b, _ := json.Marshal(map[string]any(obj))
 	return b
 }
 
@@ -41,7 +44,7 @@ func (obj Object) IndentString() string {
 	return string(b)
 }
 
-func (obj Object) Set(name string, v interface{}) Object {
+func (obj Object) Set(name string, v any) Object {
 	obj[name] = v
 	return obj
 }
@@ -106,7 +109,7 @@ func (obj Object) Keys() (keys []string) {
 	return
 }
 
-func (obj Object) Unmarshal(v interface{}) error {
+func (obj Object) Unmarshal(v any) error {
 	return json.Unmarshal(obj.Bytes(), v)
 }
 
@@ -115,10 +118,13 @@ func (obj Object) Encode() []byte {
 }
 
 func (obj *Object) Decode(data []byte) (err error) {
-	return json.Unmarshal(data, &obj)
+	if len(data) == 0 {
+		return
+	}
+	return json.Unmarshal(data, obj)
 }
 
-func ValueToObject(v interface{}) (obj Object, err error) {
+func ValueToObject(v any) (obj Object, err error) {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return
