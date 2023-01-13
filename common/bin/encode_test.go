@@ -1,9 +1,9 @@
 package bin
 
 import (
-	"testing"
-
+	"github.com/mediacoin-pro/core/common/json"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestEncode_Nil(t *testing.T) {
@@ -22,6 +22,8 @@ func TestDecode(t *testing.T) {
 		[]byte{5, 6, 7},
 		Point{88, 99},
 		[]string{"a", "b", "c"},
+		json.Object(map[string]any{"a": 1, "b": 2}),
+		json.Object(nil),
 	)
 
 	var (
@@ -31,8 +33,10 @@ func TestDecode(t *testing.T) {
 		b  []byte
 		p  Point
 		ss []string
+		jo json.Object
+		j0 json.Object
 	)
-	err := Decode(buf, &i, &s, &f, &b, &p, &ss)
+	err := Decode(buf, &i, &s, &f, &b, &p, &ss, &jo, &j0)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 123, i)
@@ -41,4 +45,6 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, []byte{5, 6, 7}, b)
 	assert.Equal(t, Point{88, 99}, p)
 	assert.Equal(t, []string{"a", "b", "c"}, ss)
+	assert.JSONEq(t, `{"a":1,"b":2}`, jo.String())
+	assert.Equal(t, json.Object(nil), j0)
 }
