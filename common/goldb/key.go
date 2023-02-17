@@ -16,7 +16,7 @@ type DBDecoder interface {
 	DBDecode([]byte) error
 }
 
-func Key(entityID Entity, vv ...interface{}) []byte {
+func Key(entityID Entity, vv ...any) []byte {
 	w := bin.NewBuffer(nil)
 	w.WriteVarInt(int(entityID))
 	encodeKeyValues(w, vv)
@@ -27,7 +27,7 @@ func PrimaryKey(tableID Entity, id uint64) []byte {
 	return Key(tableID, id)
 }
 
-func encodeKeyValues(w *bin.Buffer, vv []interface{}) *bin.Buffer {
+func encodeKeyValues(w *bin.Buffer, vv []any) *bin.Buffer {
 	for _, v := range vv {
 		if s, ok := v.(string); ok {
 			w.Write(append([]byte(s), 0x00))
@@ -38,7 +38,7 @@ func encodeKeyValues(w *bin.Buffer, vv []interface{}) *bin.Buffer {
 	return w
 }
 
-func encodeValue(v interface{}) []byte {
+func encodeValue(v any) []byte {
 	switch obj := v.(type) {
 	case DBEncoder:
 		return obj.DBEncode()
@@ -49,7 +49,7 @@ func encodeValue(v interface{}) []byte {
 	}
 }
 
-func decodeValue(data []byte, v interface{}) error {
+func decodeValue(data []byte, v any) error {
 	switch obj := v.(type) {
 	case DBDecoder:
 		return obj.DBDecode(data)

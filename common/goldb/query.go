@@ -19,7 +19,7 @@ type Query struct {
 	NumRows uint64
 }
 
-func NewQuery(idxID Entity, filterVal ...interface{}) *Query {
+func NewQuery(idxID Entity, filterVal ...any) *Query {
 	return &Query{
 		filter: Key(idxID, filterVal...),
 		limit:  -1,
@@ -31,7 +31,7 @@ func (q *Query) Async(workers int) *Query {
 	return q
 }
 
-func (q *Query) AddFilter(filterVal ...interface{}) *Query {
+func (q *Query) AddFilter(filterVal ...any) *Query {
 	q.filter = append(q.filter, Key(0, filterVal...)[1:]...)
 	return q
 }
@@ -53,7 +53,7 @@ func (q *Query) Limit(limit int64) *Query {
 	return q
 }
 
-func (q *Query) Offset(offset ...interface{}) *Query {
+func (q *Query) Offset(offset ...any) *Query {
 	q.offset = encodeKeyValues(bin.NewBuffer(nil), offset).Bytes()
 	return q
 }

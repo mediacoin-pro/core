@@ -71,7 +71,7 @@ func (t *Transaction) PutInt(key []byte, num int64) error {
 	return t.PutVar(key, num)
 }
 
-func (t *Transaction) PutVar(key []byte, v interface{}) error {
+func (t *Transaction) PutVar(key []byte, v any) error {
 	return t.Put(key, encodeValue(v))
 }
 

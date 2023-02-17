@@ -87,9 +87,9 @@ func (c *context) GetStr(key []byte) (s string, err error) {
 	return
 }
 
-// GetVar get data by key and unmarshal to to variable;
+// GetVar get data by key and unmarshal to variable;
 // Returns true when data by key existed
-func (c *context) GetVar(key []byte, v interface{}) (bool, error) {
+func (c *context) GetVar(key []byte, v any) (bool, error) {
 	if data, err := c.Get(key); err != nil {
 		return false, err
 	} else if data == nil {
@@ -139,7 +139,7 @@ func (c *context) FetchID(q *Query, fnRow func(id uint64) error) error {
 var Break = errors.New("break of fetching")
 
 // QueryValue returns first row-value by query
-func (c *context) QueryValue(q *Query, v interface{}) error {
+func (c *context) QueryValue(q *Query, v any) error {
 	q.Limit(1)
 	return c.Fetch(q, func(rec Record) error {
 		rec.MustDecode(v)
@@ -172,7 +172,7 @@ func (c *context) LastRowID(tableID Entity) (rowID uint64, err error) {
 	return
 }
 
-//------ private ------
+// ------ private ------
 var tail1024 = bytes.Repeat([]byte{255}, 1024)
 
 func (c *context) execute(q *Query, fnRow func(rec Record) error) (err error) {

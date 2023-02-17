@@ -16,7 +16,7 @@ type Record struct {
 
 var errInvalidKeyData = errors.New("goldb: invalid key data")
 
-func NewRecord(key []byte, v interface{}) Record {
+func NewRecord(key []byte, v any) Record {
 	return Record{key, encodeValue(v)}
 }
 
@@ -24,7 +24,7 @@ func (r Record) String() string {
 	return fmt.Sprintf("record(%x:%x)", r.Key, r.Value)
 }
 
-//------- key ---------
+// ------- key ---------
 func (r Record) Table() Entity {
 	id, err := decodeUint(r.Key)
 	panicOnErr(err)
@@ -36,11 +36,11 @@ func (r Record) RowID() (id uint64) {
 	return
 }
 
-func (r Record) MustDecodeKey(vv ...interface{}) {
+func (r Record) MustDecodeKey(vv ...any) {
 	panicOnErr(r.DecodeKey(vv...))
 }
 
-func (r Record) DecodeKey(vv ...interface{}) (err error) {
+func (r Record) DecodeKey(vv ...any) (err error) {
 	buf := bin.NewBuffer(r.Key)
 	if _, err = buf.ReadVarInt64(); err != nil { // read tableID
 		return
@@ -70,12 +70,12 @@ func (r Record) KeyOffset(q *Query) []byte {
 	return r.Key[len(q.filter):]
 }
 
-//------ value --------------
-func (r Record) MustDecode(v interface{}) {
+// ------ value --------------
+func (r Record) MustDecode(v any) {
 	panicOnErr(r.Decode(v))
 }
 
-func (r Record) Decode(v interface{}) error {
+func (r Record) Decode(v any) error {
 	return decodeValue(r.Value, v)
 }
 
