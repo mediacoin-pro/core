@@ -17,6 +17,8 @@ import (
 	"github.com/mediacoin-pro/core/common/bignum"
 	"github.com/mediacoin-pro/core/common/goldb"
 	"github.com/mediacoin-pro/core/common/gosync"
+	"github.com/mediacoin-pro/core/common/safe"
+	"github.com/mediacoin-pro/core/common/xlog"
 	"github.com/mediacoin-pro/core/crypto"
 	"github.com/mediacoin-pro/core/crypto/patricia"
 	"github.com/mediacoin-pro/core/model"
@@ -53,12 +55,13 @@ const (
 	dbTabStat      = 0x05 // (ts) => Statistic
 
 	// indexes
-	dbIdxTxID          = 0x20 // (txID)                        => txNum
-	dbIdxAsset         = 0x21 // (asset, txNum)                => sateValue
-	dbIdxAssetAddr     = 0x22 // (asset, addr, txNum)          => sateValue
-	dbIdxAssetAddrMemo = 0x23 // (asset, addr, addrTag, txNum) => sateValue
+	dbIdxTxID          = 0x20 // (txID)                        => txUID
+	dbIdxAsset         = 0x21 // (asset, txUID)                => sateValue
+	dbIdxAssetAddr     = 0x22 // (asset, addr, txUID, stIdx)   => sateValue
+	dbIdxAssetAddrMemo = 0x23 // (asset, addr, memo, txUID, stIdx) => sateValue
 	dbIdxUserID        = 0x24 // (userID) => txUID
 	dbIdxUserNick      = 0x25 // (nick) => txUID
+	dbIdxTypeAssetAddr = 0x26 // (txType, asset, addr, txUID) => 0
 
 	dbIdxInvites    = 0x27 // (userID, txNum)               => invitedUserID
 	dbIdxSrcInvites = 0x28 // (userID, txNum)               => invitedUserID
@@ -117,6 +120,8 @@ func NewChainStorage(dir string, cfg *chain.Config) (s *ChainStorage) {
 	// set default user-name resolver
 	chain.UserNameByID = s.UsernameByID
 
+	go s.reindex()
+
 	return
 }
 
@@ -171,7 +176,7 @@ func (s *ChainStorage) State() *state.State {
 	})
 }
 
-//----------------- put block --------------------------
+// ----------------- put block --------------------------
 func (s *ChainStorage) PutNewBlock(txs []*chain.Transaction, miner *crypto.PrivateKey) (block *chain.Block, err error) {
 	block, err = chain.GenerateNewBlock(s, txs, miner)
 	if err != nil || block == nil {
@@ -327,6 +332,7 @@ func (s *ChainStorage) PutBlock(blocks ...*chain.Block) error {
 						stateTree.Put(v.StateKey(), v.Balance.Bytes())
 
 						tr.PutVar(goldb.Key(dbIdxAssetAddr, v.Asset, v.Address, txUID, stIdx), v.Balance)
+						tr.PutVar(goldb.Key(dbIdxTypeAssetAddr, tx.Type, v.Asset, v.Address, txUID), 0)
 
 						if v.Memo != 0 { // change state with memo
 							tr.PutVar(goldb.Key(dbIdxAssetAddrMemo, v.Asset, v.Address, v.Memo, txUID, stIdx), v.Balance)
@@ -519,7 +525,7 @@ func (s *ChainStorage) FetchBlockHeaders(offset uint64, limit int64, desc bool, 
 	})
 }
 
-//------------ txs --------------------
+// ------------ txs --------------------
 func encodeTxUID(blockNum uint64, txIdx int) uint64 {
 	return (blockNum << 32) | uint64(txIdx)
 }
@@ -677,14 +683,51 @@ func (s *ChainStorage) FetchTransactionsByAddr(
 	orderDesc bool,
 	fn func(tx *chain.Transaction, val bignum.Int) error,
 ) error {
+	return s.fetchTransactionsByAddr(0, asset, addr, memo, offset, limit, orderDesc, fn)
+}
+
+func (s *ChainStorage) FetchTransfersByAddr(
+	asset []byte,
+	addr []byte,
+	offset uint64,
+	limit int64,
+	orderDesc bool,
+	fn func(tx *chain.Transaction) error,
+) error {
+	return s.fetchTransactionsByAddr(model.TxTransfer, asset, addr, 0, offset, limit, orderDesc, func(tx *chain.Transaction, _ bignum.Int) error {
+		return fn(tx)
+	})
+}
+
+func (s *ChainStorage) fetchTransactionsByAddr(
+	txType int,
+	asset []byte,
+	addr []byte,
+	memo uint64,
+	offset uint64,
+	limit int64,
+	orderDesc bool,
+	fn func(tx *chain.Transaction, val bignum.Int) error,
+) error {
 	if len(asset) == 0 {
 		asset = assets.Default
 	}
 	var q *goldb.Query
-	if memo == 0 { // fetch transactions by address
-		q = goldb.NewQuery(dbIdxAssetAddr, asset, addr)
-	} else { // fetch transactions by address+memo
+	var keyVals []any
+	var txUID uint64
+	switch {
+	case txType != 0:
+		// fetch transactions by type+address
+		q = goldb.NewQuery(dbIdxTypeAssetAddr, txType, asset, addr)
+		keyVals = []any{new(int), new([]byte), new([]byte), &txUID}
+	case memo != 0:
+		// fetch transactions by address+memo
 		q = goldb.NewQuery(dbIdxAssetAddrMemo, asset, addr, memo)
+		keyVals = []any{new([]byte), new([]byte), new(uint64), &txUID}
+	default:
+		// fetch transactions by address
+		q = goldb.NewQuery(dbIdxAssetAddr, asset, addr)
+		keyVals = []any{new([]byte), new([]byte), &txUID}
 	}
 	if offset > 0 {
 		q.Offset(offset)
@@ -694,21 +737,15 @@ func (s *ChainStorage) FetchTransactionsByAddr(
 	}
 	q.Order(orderDesc)
 
-	var txUID uint64
+	var preTxUID uint64
 	return s.db.Fetch(q, func(rec goldb.Record) error {
 		if limit <= 0 {
 			return goldb.Break
 		}
-		var _memo, _txUID uint64
-		if memo == 0 {
-			rec.MustDecodeKey(&asset, &addr, &_txUID)
-		} else {
-			rec.MustDecodeKey(&asset, &addr, &_memo, &_txUID)
-		}
-		if txUID == _txUID { // exclude multiple records with the same txUID
+		if rec.MustDecodeKey(keyVals...); txUID == preTxUID { // exclude multiple records with the same txUID
 			return nil
 		}
-		txUID = _txUID
+		preTxUID = txUID
 		tx, err := s.transactionByUID(txUID)
 		if err != nil {
 			return err
@@ -962,4 +999,37 @@ func (s *ChainStorage) AddressInfo(addr []byte, memo uint64, asset []byte) (inf 
 		inf.UserNick = user.Nick
 	}
 	return
+}
+
+func (s *ChainStorage) reindex() {
+	defer safe.RecoverAndReport()
+	time.Sleep(10 * time.Second)
+
+	if n, _ := s.db.GetNumRows(goldb.NewQuery(dbIdxTypeAssetAddr).Limit(1)); n > 0 {
+		return
+	}
+	var blockNum = uint64(2) // start from second block
+	var txUID = blockNum << 32
+	countBlocks := s.CountBlocks()
+	xlog.Printf("- start reindexer   blocks:%d", countBlocks)
+	defer xlog.Printf("- FINISH reindexer   blocks:%d ", blockNum)
+
+	for i := 0; blockNum < countBlocks; {
+		time.Sleep(time.Millisecond)
+		func() {
+			s.mxW.Lock()
+			defer s.mxW.Unlock()
+			s.db.Exec(func(tr *goldb.Transaction) {
+				s.FetchTransactions(txUID, 5000, false, func(tx *chain.Transaction) error {
+					i++
+					txUID, blockNum = tx.TxUID(), tx.BlockNum()
+					for _, v := range tx.StateUpdates {
+						tr.PutVar(goldb.Key(dbIdxTypeAssetAddr, tx.Type, v.Asset, v.Address, txUID), 0)
+					}
+					return nil
+				})
+			})
+			xlog.Printf("- reindexed  txs:%d  blocks:%d/%d", i, blockNum, countBlocks)
+		}()
+	}
 }
