@@ -1,6 +1,7 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 )
@@ -9,7 +10,7 @@ func UnmarshalFile(filename string, v interface{}) error {
 	if data, err := ioutil.ReadFile(filename); err != nil {
 		return err
 	} else {
-		return json.Unmarshal(data, v)
+		return json.Unmarshal(bytes.TrimSpace(data), v)
 	}
 }
 
