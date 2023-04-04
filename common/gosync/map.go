@@ -15,10 +15,10 @@ import (
 type Map struct {
 	mx   sync.RWMutex
 	ver  uint64
-	vals map[interface{}]interface{}
+	vals map[any]any
 }
 
-func normKey(key interface{}) interface{} {
+func normKey(key any) any {
 	if v, ok := key.([]byte); ok {
 		return string(v)
 	}
@@ -28,29 +28,29 @@ func normKey(key interface{}) interface{} {
 func (m *Map) Clear() {
 	m.mx.Lock()
 	defer m.mx.Unlock()
-	m.vals = map[interface{}]interface{}{}
+	m.vals = map[any]any{}
 	m.ver++
 }
 
-func (m *Map) Set(key, value interface{}) {
+func (m *Map) Set(key, value any) {
 	key = normKey(key)
 
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	if m.vals == nil {
-		m.vals = map[interface{}]interface{}{}
+		m.vals = map[any]any{}
 	}
 	m.vals[key] = value
 	m.ver++
 }
 
-func (m *Map) Increment(key interface{}, val int64) int64 {
+func (m *Map) Increment(key any, val int64) int64 {
 	key = normKey(key)
 
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	if m.vals == nil {
-		m.vals = map[interface{}]interface{}{}
+		m.vals = map[any]any{}
 	}
 	if v, ok := m.vals[key].(int64); ok {
 		val += v
@@ -60,7 +60,7 @@ func (m *Map) Increment(key interface{}, val int64) int64 {
 	return val
 }
 
-func (m *Map) Delete(key interface{}) {
+func (m *Map) Delete(key any) {
 	key = normKey(key)
 
 	m.mx.Lock()
@@ -72,7 +72,7 @@ func (m *Map) Delete(key interface{}) {
 	}
 }
 
-func (m *Map) Get(key interface{}) interface{} {
+func (m *Map) Get(key any) any {
 	key = normKey(key)
 
 	m.mx.RLock()
@@ -84,7 +84,7 @@ func (m *Map) Get(key interface{}) interface{} {
 	return nil
 }
 
-func (m *Map) Exists(key interface{}) bool {
+func (m *Map) Exists(key any) bool {
 	key = normKey(key)
 
 	m.mx.RLock()
@@ -115,7 +115,7 @@ func (m *Map) Info() (size int, ver uint64) {
 	return len(m.vals), m.ver
 }
 
-func (m *Map) ForEach(fn func(key, value interface{})) {
+func (m *Map) ForEach(fn func(key, value any)) {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
@@ -126,11 +126,11 @@ func (m *Map) ForEach(fn func(key, value interface{})) {
 	}
 }
 
-func (m *Map) KeyValues() map[interface{}]interface{} {
+func (m *Map) KeyValues() map[any]any {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
-	res := map[interface{}]interface{}{}
+	res := map[any]any{}
 	if m.vals != nil {
 		for k, v := range m.vals {
 			res[k] = v
@@ -139,11 +139,11 @@ func (m *Map) KeyValues() map[interface{}]interface{} {
 	return res
 }
 
-func (m *Map) Keys() []interface{} {
+func (m *Map) Keys() []any {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
-	vv := make([]interface{}, 0, len(m.vals))
+	vv := make([]any, 0, len(m.vals))
 	if m.vals != nil {
 		for key := range m.vals {
 			vv = append(vv, key)
@@ -152,11 +152,11 @@ func (m *Map) Keys() []interface{} {
 	return vv
 }
 
-func (m *Map) Values() []interface{} {
+func (m *Map) Values() []any {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
-	vv := make([]interface{}, 0, len(m.vals))
+	vv := make([]any, 0, len(m.vals))
 	if m.vals != nil {
 		for _, v := range m.vals {
 			vv = append(vv, v)
@@ -186,7 +186,7 @@ func (m *Map) Strings() []string {
 	return ss
 }
 
-func (m *Map) Pop() (key, value interface{}) {
+func (m *Map) Pop() (key, value any) {
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	if m.vals != nil {
@@ -199,7 +199,7 @@ func (m *Map) Pop() (key, value interface{}) {
 	return
 }
 
-func (m *Map) PopAll() (values map[interface{}]interface{}) {
+func (m *Map) PopAll() (values map[any]any) {
 	m.mx.Lock()
 	defer m.mx.Unlock()
 	values = m.vals
@@ -208,17 +208,17 @@ func (m *Map) PopAll() (values map[interface{}]interface{}) {
 	return
 }
 
-func (m *Map) RandomValue() interface{} {
+func (m *Map) RandomValue() any {
 	_, v := m.Random()
 	return v
 }
 
-func (m *Map) RandomKey() interface{} {
+func (m *Map) RandomKey() any {
 	k, _ := m.Random()
 	return k
 }
 
-func (m *Map) Random() (key, value interface{}) {
+func (m *Map) Random() (key, value any) {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
@@ -251,7 +251,7 @@ func (m *Map) BinaryDecode(r io.Reader) (err error) {
 }
 
 // String returns object as string (encode to json)
-func encString(v interface{}) string {
+func encString(v any) string {
 	switch s := v.(type) {
 	case string:
 		return s
