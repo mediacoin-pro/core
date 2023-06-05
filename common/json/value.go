@@ -7,10 +7,10 @@ import (
 )
 
 type Value struct {
-	val interface{}
+	val any
 }
 
-func NewValue(v interface{}) Value {
+func NewValue(v any) Value {
 	return Value{v}
 }
 
@@ -47,9 +47,9 @@ func (v Value) Empty() bool {
 		return v == ""
 	case int, int32, int64, uint, uint32, uint64, float32, float64:
 		return v == 0
-	case map[string]interface{}:
+	case map[string]any:
 		return len(v) == 0
-	case []interface{}:
+	case []any:
 		return len(v) == 0
 	}
 	return false
@@ -69,7 +69,7 @@ func (v Value) IsArray() bool {
 
 func (v Value) Array() Array {
 	switch val := v.val.(type) {
-	case []interface{}:
+	case []any:
 		return val
 
 	case Array:
@@ -82,7 +82,7 @@ func (v Value) Array() Array {
 
 func (v Value) Object() Object {
 	switch val := v.val.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return val
 
 	case Object:
@@ -195,7 +195,7 @@ func (v Value) Float64() (num float64) {
 	return
 }
 
-func IsNum(v interface{}) bool {
+func IsNum(v any) bool {
 	switch v.(type) {
 	case int, uint, int32, uint32, int64, uint64, float32, float64:
 		return true
